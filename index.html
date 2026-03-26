@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VON KOENIGSWEG IMMERSIVE</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Space+Grotesk:wght@300;400;500&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- Custom Cursor -->
+  <div class="cursor" id="cursor"></div>
+  <div class="cursor-ring" id="cursor-ring"></div>
+
+  <!-- Loader -->
+  <div id="loader">
+    <div class="loader-inner">
+      <div class="loader-brand">
+        <span class="loader-vk">VK</span>
+        <div class="loader-lines">
+          <span>VON KOENIGSWEG</span>
+          <span class="loader-sub">IMMERSIVE</span>
+        </div>
+      </div>
+      <div class="loader-bar-wrap">
+        <div class="loader-bar"><div class="loader-progress" id="loader-progress"></div></div>
+        <span class="loader-pct" id="loader-pct">0</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <nav id="nav">
+    <a href="#" class="nav-logo">VK IMMERSIVE</a>
+    <ul class="nav-links">
+      <li><a href="#works">WORKS</a></li>
+      <li><a href="#about">STUDIO</a></li>
+      <li><a href="#contact">CONTACT</a></li>
+    </ul>
+  </nav>
+
+  <!-- Scroll Progress (right edge) -->
+  <div class="scroll-track">
+    <div class="scroll-fill" id="scroll-fill"></div>
+  </div>
+
+  <!-- WebGL Canvas -->
+  <canvas id="webgl"></canvas>
+
+  <!-- Main Scrollable Content -->
+  <div id="content">
+
+    <!-- HERO -->
+    <section id="hero">
+      <div class="hero-text">
+        <span class="label" data-anim="hero-label">IMMERSIVE 3D STUDIO</span>
+        <h1 class="hero-title">
+          <span class="hero-line" data-anim="hero-line-1">VON</span>
+          <span class="hero-line" data-anim="hero-line-2">KOENIGSWEG</span>
+        </h1>
+        <p class="hero-sub" data-anim="hero-sub">We craft 3D worlds that move people</p>
+      </div>
+      <div class="scroll-hint">
+        <div class="scroll-hint-line"></div>
+        <span>SCROLL</span>
+      </div>
+    </section>
+
+    <!-- SPACE (camera travels) -->
+    <div class="spacer" style="height: 60vh;"></div>
+
+    <!-- WORKS -->
+    <section id="works">
+      <div class="section-head works-header">
+        <span class="label">SELECTED WORKS</span>
+        <h2>WORLDS</h2>
+      </div>
+      <div class="works-grid" id="works-grid">
+        <!-- Injected via JS -->
+      </div>
+    </section>
+
+    <!-- SPACE -->
+    <div class="spacer" style="height: 60vh;"></div>
+
+    <!-- ABOUT -->
+    <section id="about">
+      <div class="about-content">
+        <span class="label about-label">STUDIO</span>
+        <h2 class="about-title">WE BUILD<br>WORLDS</h2>
+        <p class="about-body">
+          von koenigsweg immersive crafts state-of-the-art 3D experiences
+          that push the boundary between reality and imagination.
+          Every frame, every world — built to captivate.
+        </p>
+        <div class="about-stats">
+          <div class="stat">
+            <span class="stat-val">∞</span>
+            <span class="stat-lbl">WORLDS</span>
+          </div>
+          <div class="stat">
+            <span class="stat-val">3D</span>
+            <span class="stat-lbl">FIRST</span>
+          </div>
+          <div class="stat">
+            <span class="stat-val">RT</span>
+            <span class="stat-lbl">REALTIME</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONTACT -->
+    <section id="contact">
+      <div class="contact-content">
+        <span class="label contact-label">START A PROJECT</span>
+        <h2 class="contact-title">LET'S BUILD<br>YOUR WORLD</h2>
+        <a href="mailto:hello@vonkoenigsweg.de" class="cta-link contact-cta">
+          <span>hello@vonkoenigsweg.de</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <line x1="5" y1="12" x2="19" y2="12"/>
+            <polyline points="12 5 19 12 12 19"/>
+          </svg>
+        </a>
+      </div>
+    </section>
+
+  </div><!-- /content -->
+
+  <!-- GLB / Video Viewer Modal -->
+  <div id="viewer-modal" class="viewer-modal">
+    <button id="viewer-close" class="viewer-close">✕</button>
+    <canvas id="viewer-canvas"></canvas>
+    <div class="viewer-meta">
+      <h3 id="viewer-title"></h3>
+      <span id="viewer-category"></span>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
