@@ -90,12 +90,12 @@ export function initWorld(canvas: HTMLCanvasElement): void {
   renderer.setSize(window.innerWidth, window.innerHeight)
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
   renderer.toneMapping = THREE.ACESFilmicToneMapping
-  renderer.toneMappingExposure = 1.1
+  renderer.toneMappingExposure = 0.7
   renderer.outputColorSpace = THREE.SRGBColorSpace
 
   scene = new THREE.Scene()
-  scene.background = new THREE.Color(0x06060A)
-  scene.fog = new THREE.FogExp2(0x06060A, 0.011)
+  scene.background = new THREE.Color(0x020205)
+  scene.fog = new THREE.FogExp2(0x020205, 0.013)
 
   camera = new THREE.PerspectiveCamera(72, window.innerWidth / window.innerHeight, 0.1, 120)
   camera.position.copy(CAM_PTS[0])
@@ -117,21 +117,21 @@ export function initWorld(canvas: HTMLCanvasElement): void {
 
 // ─── Lights ────────────────────────────────────────────────────────────────
 function buildLights(): void {
-  scene.add(new THREE.AmbientLight(0x10101A, 0.6))
+  scene.add(new THREE.AmbientLight(0x05050A, 0.3))
 
-  const gold = new THREE.PointLight(0xC9A84C, 60, 22)
+  const gold = new THREE.PointLight(0xC9A84C, 25, 18)
   gold.position.set(3, 4, 2)
   scene.add(gold)
 
-  const blue = new THREE.PointLight(0x4466FF, 35, 26)
+  const blue = new THREE.PointLight(0x4466FF, 15, 20)
   blue.position.set(-5, -3, -2)
   scene.add(blue)
 
-  const purple = new THREE.PointLight(0x8833FF, 45, 22)
+  const purple = new THREE.PointLight(0x8833FF, 18, 18)
   purple.position.set(0, 3, -14)
   scene.add(purple)
 
-  const warm = new THREE.PointLight(0xFFAA44, 30, 20)
+  const warm = new THREE.PointLight(0xFFAA44, 12, 16)
   warm.position.set(1, 0, -30)
   scene.add(warm)
 }
@@ -193,7 +193,7 @@ function buildParticles(): void {
 function buildHero(): void {
   // Wireframe icosahedron
   const wGeo = new THREE.IcosahedronGeometry(2.6, 1)
-  const wMat = new THREE.MeshBasicMaterial({ color: 0xC9A84C, wireframe: true, transparent: true, opacity: 0.35 })
+  const wMat = new THREE.MeshBasicMaterial({ color: 0xC9A84C, wireframe: true, transparent: true, opacity: 0.18 })
   heroMesh = new THREE.Mesh(wGeo, wMat)
   scene.add(heroMesh)
 
@@ -238,7 +238,7 @@ function buildFloaters(): void {
   for (const d of defs) {
     const mat = new THREE.MeshStandardMaterial({
       color: d.color, emissive: d.emit, emissiveIntensity: 0.4,
-      metalness: 0.85, roughness: 0.15,
+      metalness: 0.85, roughness: 0.15, emissiveIntensity: 0.12,
     })
     const mesh = new THREE.Mesh(d.geo, mat)
     mesh.position.set(d.x, d.y, d.z)
@@ -298,9 +298,9 @@ function buildPostFX(): void {
 
   const bloom = new UnrealBloomPass(
     new THREE.Vector2(window.innerWidth, window.innerHeight),
-    1.3,   // strength
-    0.45,  // radius
-    0.12,  // threshold
+    0.7,   // strength
+    0.35,  // radius
+    0.25,  // threshold
   )
   composer.addPass(bloom)
   composer.addPass(new OutputPass())

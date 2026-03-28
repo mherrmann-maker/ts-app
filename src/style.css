@@ -8,8 +8,8 @@
 }
 
 :root {
-  --bg:        #06060A;
-  --bg2:       #0C0C12;
+  --bg:        #020205;
+  --bg2:       #060608;
   --gold:      #C9A84C;
   --gold-30:   rgba(201,168,76,0.3);
   --gold-10:   rgba(201,168,76,0.08);
@@ -24,7 +24,7 @@
 html { scroll-behavior: auto; }
 
 body {
-  background: var(--bg);
+  background: #020205;
   color: var(--white);
   font-family: var(--body);
   overflow-x: hidden;
