@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - claude/install-github-app-W4Nga
+      - claude/strudel-visual-interface-wnYhg
 
 permissions:
   contents: write
