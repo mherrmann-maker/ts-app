@@ -2,132 +2,170 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>STRUDEL — Live Coding Synthesizer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>SYNTH — Visual Synthesizer</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&family=Space+Grotesk:wght@300;400;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@400;600&display=swap" rel="stylesheet" />
 </head>
 <body>
-  <div id="app">
 
-    <!-- Header -->
-    <header class="s-header">
-      <div class="s-logo">
-        <span class="s-logo-wave">〜</span>
-        <span class="s-logo-text">STRUDEL</span>
-      </div>
-
-      <div class="s-controls">
-        <button id="btn-play" class="s-btn s-btn-play" title="Play (Ctrl+Enter)">
-          <svg id="icon-play" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-          <svg id="icon-pause" viewBox="0 0 24 24" fill="currentColor" style="display:none"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
-          <span id="btn-play-label">PLAY</span>
-        </button>
-        <button id="btn-stop" class="s-btn s-btn-stop" title="Stop (Ctrl+.)">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h12v12H6z"/></svg>
-          STOP
-        </button>
-
-        <div class="s-divider"></div>
-
-        <div class="s-control-group">
-          <label class="s-ctrl-label">BPM</label>
-          <input type="number" id="bpm" value="120" min="30" max="300" class="s-input" />
-        </div>
-
-        <div class="s-control-group">
-          <label class="s-ctrl-label">VOL</label>
-          <input type="range" id="volume" min="0" max="1" step="0.01" value="0.8" class="s-slider" />
-        </div>
-      </div>
-
-      <a href="index.html" class="s-back-link">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M19 12H5M5 12l7-7M5 12l7 7"/></svg>
-        PORTFOLIO
-      </a>
-    </header>
-
-    <!-- Mobile tab switcher (only visible on small screens) -->
-    <div class="s-mobile-tabs">
-      <button class="s-mobile-tab active" data-panel="editor">CODE</button>
-      <button class="s-mobile-tab" data-panel="viz">VISUAL</button>
+  <!-- Header / Transport -->
+  <header class="transport">
+    <div class="transport-logo">
+      <span class="logo-wave">〜</span>
+      <span class="logo-name">SYNTH</span>
     </div>
 
-    <!-- Main layout -->
-    <main class="s-main">
+    <button id="btn-play" class="t-btn play-btn">
+      <svg id="ico-play"  viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      <svg id="ico-pause" viewBox="0 0 24 24" fill="currentColor" style="display:none"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+    </button>
+    <button id="btn-stop" class="t-btn stop-btn">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h12v12H6z"/></svg>
+    </button>
 
-      <!-- Left: Code Editor -->
-      <section class="s-editor-panel">
-        <div class="s-panel-header">
-          <span class="s-panel-label">EDITOR</span>
-          <div class="s-presets">
-            <span class="s-presets-label">PRESETS</span>
-            <button class="s-preset-btn" data-preset="0">DRUMS</button>
-            <button class="s-preset-btn" data-preset="1">MELODIE</button>
-            <button class="s-preset-btn" data-preset="2">AMBIENT</button>
-            <button class="s-preset-btn" data-preset="3">KOMPLEX</button>
-          </div>
-        </div>
-
-        <div id="editor" class="s-editor"></div>
-
-        <div class="s-editor-footer">
-          <span class="s-hint"><kbd>Ctrl</kbd><kbd>↵</kbd> ausführen &nbsp;·&nbsp; <kbd>Ctrl</kbd><kbd>.</kbd> stop</span>
-          <div id="eval-status" class="s-eval-status"></div>
-        </div>
-      </section>
-
-      <!-- Right: Visualization -->
-      <section class="s-viz-panel">
-        <div class="s-panel-header">
-          <span class="s-panel-label">VISUALIZER</span>
-          <div class="s-viz-tabs">
-            <button class="s-viz-tab active" data-viz="spectrum">SPEKTRUM</button>
-            <button class="s-viz-tab" data-viz="waveform">WELLE</button>
-            <button class="s-viz-tab" data-viz="pianoroll">NOTEN</button>
-          </div>
-        </div>
-
-        <div class="s-canvas-container">
-          <canvas id="canvas-spectrum" class="s-canvas active"></canvas>
-          <canvas id="canvas-waveform" class="s-canvas"></canvas>
-          <canvas id="canvas-pianoroll" class="s-canvas"></canvas>
-        </div>
-
-        <div class="s-info-bar">
-          <div class="s-info-item">
-            <span class="s-info-label">STATUS</span>
-            <span id="play-status" class="s-info-value s-status-stopped">GESTOPPT</span>
-          </div>
-          <div class="s-info-item">
-            <span class="s-info-label">TAKT</span>
-            <span id="cycle-val" class="s-info-value">—</span>
-          </div>
-          <div class="s-info-item">
-            <span class="s-info-label">EVENTS</span>
-            <span id="event-val" class="s-info-value">—</span>
-          </div>
-          <div class="s-info-item">
-            <span class="s-info-label">FREQ</span>
-            <span id="freq-val" class="s-info-value">—</span>
-          </div>
-        </div>
-      </section>
-
-    </main>
-
-    <!-- Error toast -->
-    <div id="error-panel" class="s-error hidden">
-      <svg class="s-error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-        <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
-      </svg>
-      <pre id="error-message" class="s-error-message"></pre>
-      <button id="error-close" class="s-error-close">✕</button>
+    <div class="bpm-ctrl">
+      <span class="ctrl-lbl">BPM</span>
+      <button class="bpm-arrow" id="bpm-down">−</button>
+      <span id="bpm-val" class="bpm-val">120</span>
+      <button class="bpm-arrow" id="bpm-up">+</button>
     </div>
 
-  </div><!-- #app -->
+    <div class="vol-ctrl">
+      <span class="ctrl-lbl">VOL</span>
+      <input type="range" id="master-vol" min="-30" max="0" step="1" value="-6" class="t-slider" />
+    </div>
 
-  <script type="module" src="/src/strudel-app.ts"></script>
+    <a href="index.html" class="t-back">← zurück</a>
+  </header>
+
+  <!-- Tab bar -->
+  <nav class="tab-bar">
+    <button class="tab active" data-tab="drums">🥁 DRUMS</button>
+    <button class="tab" data-tab="melody">🎹 MELODIE</button>
+    <button class="tab" data-tab="synth">🎛 SYNTH</button>
+    <button class="tab" data-tab="fx">✨ EFFEKTE</button>
+  </nav>
+
+  <!-- ── DRUMS TAB ── -->
+  <section id="tab-drums" class="tab-panel active">
+    <div class="sequencer" id="drum-sequencer">
+      <!-- filled by JS -->
+    </div>
+    <div class="step-indicators">
+      <!-- 16 tiny beat indicators -->
+    </div>
+  </section>
+
+  <!-- ── MELODY TAB ── -->
+  <section id="tab-melody" class="tab-panel">
+    <p class="melody-hint">① Schritt antippen  → ② Note wählen</p>
+    <div class="sequencer" id="melody-sequencer">
+      <!-- filled by JS -->
+    </div>
+    <div class="keyboard-wrap">
+      <div id="keyboard" class="keyboard">
+        <!-- filled by JS -->
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SYNTH TAB ── -->
+  <section id="tab-synth" class="tab-panel">
+    <div class="synth-section">
+      <h3 class="section-title">WELLENFORM</h3>
+      <div class="wave-btns" id="wave-btns">
+        <button class="wave-btn active" data-wave="sawtooth">SAW ⋀</button>
+        <button class="wave-btn" data-wave="square">SQR ⊓</button>
+        <button class="wave-btn" data-wave="triangle">TRI △</button>
+        <button class="wave-btn" data-wave="sine">SIN ∿</button>
+      </div>
+    </div>
+
+    <div class="synth-section">
+      <h3 class="section-title">FILTER</h3>
+      <div class="knob-row">
+        <div class="knob-wrap">
+          <canvas class="knob" id="knob-cutoff" width="64" height="64" data-min="80" data-max="12000" data-val="2000" data-log="true"></canvas>
+          <span class="knob-lbl">CUTOFF</span>
+        </div>
+        <div class="knob-wrap">
+          <canvas class="knob" id="knob-res" width="64" height="64" data-min="0" data-max="15" data-val="2"></canvas>
+          <span class="knob-lbl">RESONANZ</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="synth-section">
+      <h3 class="section-title">HÜLLKURVE (ADSR)</h3>
+      <div class="knob-row">
+        <div class="knob-wrap">
+          <canvas class="knob" id="knob-attack"  width="64" height="64" data-min="0.001" data-max="2" data-val="0.01"></canvas>
+          <span class="knob-lbl">ATTACK</span>
+        </div>
+        <div class="knob-wrap">
+          <canvas class="knob" id="knob-decay"   width="64" height="64" data-min="0.01"  data-max="2" data-val="0.2"></canvas>
+          <span class="knob-lbl">DECAY</span>
+        </div>
+        <div class="knob-wrap">
+          <canvas class="knob" id="knob-sustain" width="64" height="64" data-min="0"     data-max="1" data-val="0.5"></canvas>
+          <span class="knob-lbl">SUSTAIN</span>
+        </div>
+        <div class="knob-wrap">
+          <canvas class="knob" id="knob-release" width="64" height="64" data-min="0.01"  data-max="3" data-val="0.4"></canvas>
+          <span class="knob-lbl">RELEASE</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FX TAB ── -->
+  <section id="tab-fx" class="tab-panel">
+    <div class="synth-section">
+      <h3 class="section-title">HALL (REVERB)</h3>
+      <div class="knob-row">
+        <div class="knob-wrap">
+          <canvas class="knob" id="knob-rev-wet"   width="64" height="64" data-min="0" data-max="1" data-val="0.1"></canvas>
+          <span class="knob-lbl">MIX</span>
+        </div>
+        <div class="knob-wrap">
+          <canvas class="knob" id="knob-rev-decay" width="64" height="64" data-min="0.1" data-max="8" data-val="2"></canvas>
+          <span class="knob-lbl">ABKLINGEN</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="synth-section">
+      <h3 class="section-title">ECHO (DELAY)</h3>
+      <div class="knob-row">
+        <div class="knob-wrap">
+          <canvas class="knob" id="knob-del-wet"  width="64" height="64" data-min="0"   data-max="0.8" data-val="0"></canvas>
+          <span class="knob-lbl">MIX</span>
+        </div>
+        <div class="knob-wrap">
+          <canvas class="knob" id="knob-del-feed" width="64" height="64" data-min="0"   data-max="0.85" data-val="0.3"></canvas>
+          <span class="knob-lbl">FEEDBACK</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="synth-section">
+      <h3 class="section-title">VERZERRUNG (DISTORTION)</h3>
+      <div class="knob-row">
+        <div class="knob-wrap">
+          <canvas class="knob" id="knob-dist" width="64" height="64" data-min="0" data-max="0.9" data-val="0"></canvas>
+          <span class="knob-lbl">DRIVE</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Visualizer bar at bottom -->
+  <div class="viz-bar">
+    <canvas id="viz-canvas" class="viz-canvas"></canvas>
+  </div>
+
+  <script type="module" src="/src/synth-app.ts"></script>
+
 </body>
 </html>
