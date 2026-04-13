@@ -8,6 +8,7 @@ export default defineConfig({
       input: {
         main:    resolve(__dirname, 'index.html'),
         strudel: resolve(__dirname, 'strudel.html'),
+        session: resolve(__dirname, 'session.html'),
       },
     },
   },

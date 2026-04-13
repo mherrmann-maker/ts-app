@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no"/>
+  <title>SESSION — Live Clip Launcher</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;600&display=swap" rel="stylesheet"/>
+</head>
+<body>
+
+<!-- ── Transport ────────────────────────────────────── -->
+<header class="transport">
+  <div class="t-logo">
+    <span class="t-wave">〜</span>
+    <span class="t-name">SESSION</span>
+  </div>
+
+  <button class="t-btn play-btn" id="btn-play" title="Play">
+    <svg id="ico-play"  viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+    <svg id="ico-stop2" viewBox="0 0 24 24" fill="currentColor" style="display:none"><path d="M6 6h12v12H6z"/></svg>
+  </button>
+
+  <div class="bpm-wrap">
+    <button class="bpm-btn" id="bpm-dn">−</button>
+    <span id="bpm-val" class="bpm-val">120</span>
+    <button class="bpm-btn" id="bpm-up">+</button>
+    <span class="t-lbl">BPM</span>
+  </div>
+
+  <div class="quant-wrap">
+    <span class="t-lbl">QUANT</span>
+    <select id="quant-select" class="quant-select">
+      <option value="1m">1 Takt</option>
+      <option value="2m">2 Takte</option>
+      <option value="0.5m">½ Takt</option>
+      <option value="0">Sofort</option>
+    </select>
+  </div>
+
+  <label class="t-lbl">VOL
+    <input type="range" id="master-vol" class="t-range" min="-40" max="0" step="1" value="-6"/>
+  </label>
+
+  <div class="t-right">
+    <button class="t-nav-btn" id="btn-add-track">+ SPUR</button>
+    <a href="strudel.html" class="t-nav-btn">🎛 DAW</a>
+    <a href="index.html"   class="t-nav-btn">← HOME</a>
+  </div>
+</header>
+
+<!-- ── Beat indicator ───────────────────────────────── -->
+<div class="beat-strip" id="beat-strip">
+  <div class="beat-dot" id="b0"></div>
+  <div class="beat-dot" id="b1"></div>
+  <div class="beat-dot" id="b2"></div>
+  <div class="beat-dot" id="b3"></div>
+</div>
+
+<!-- ── Session Grid ──────────────────────────────────── -->
+<div class="session-scroll-wrap">
+<div class="session-grid" id="session-grid">
+  <!-- Track headers + Stop row filled by JS -->
+  <!-- Scene rows filled by JS -->
+  <!-- Scene launch column on right -->
+</div>
+</div>
+
+<!-- ── Clip Editor Sheet ─────────────────────────────── -->
+<div class="sheet-overlay hidden" id="sheet-overlay">
+  <div class="sheet" id="clip-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <span id="sheet-title" class="sheet-title">CLIP BEARBEITEN</span>
+      <button id="sheet-close" class="sheet-close">✕</button>
+    </div>
+
+    <!-- Clip name + color -->
+    <div class="sheet-row">
+      <input type="text" id="clip-name-input" class="clip-name-input" placeholder="Clip-Name…"/>
+      <div class="color-swatches" id="color-swatches"></div>
+    </div>
+
+    <!-- Tab bar inside sheet -->
+    <div class="sheet-tabs">
+      <button class="sh-tab active" data-sh="steps">SCHRITTE</button>
+      <button class="sh-tab" data-sh="notes">NOTEN</button>
+      <button class="sh-tab" data-sh="code">CODE</button>
+    </div>
+
+    <!-- Steps editor -->
+    <div class="sh-panel active" id="sh-steps">
+      <div class="steps-wrap" id="clip-steps"></div>
+      <div class="sh-row">
+        <label class="sh-lbl">SOUND</label>
+        <div class="sound-select-wrap" id="sound-select-wrap"></div>
+      </div>
+    </div>
+
+    <!-- Notes editor (melody) -->
+    <div class="sh-panel" id="sh-notes">
+      <p class="sh-hint">Schritt auswählen → Note tippen</p>
+      <div class="note-steps-wrap" id="note-steps"></div>
+      <div class="mini-keyboard" id="mini-keyboard"></div>
+    </div>
+
+    <!-- Code editor -->
+    <div class="sh-panel" id="sh-code">
+      <textarea id="clip-code-editor" class="clip-code-editor" spellcheck="false" rows="6"></textarea>
+    </div>
+
+    <div class="sheet-footer">
+      <button class="sh-btn-danger" id="clip-delete">LÖSCHEN</button>
+      <button class="sh-btn-save" id="clip-save">SPEICHERN</button>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="/src/session-app.ts"></script>
+</body>
+</html>
