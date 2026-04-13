@@ -1,173 +1,205 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>SYNTH — Visual Synthesizer</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@400;600&display=swap" rel="stylesheet" />
-  <script type="module" crossorigin src="./assets/strudel-COD8OZ-t.js"></script>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no"/>
+  <title>STRUDEL DAW</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@400;600&display=swap" rel="stylesheet"/>
+  <script type="module" crossorigin src="./assets/strudel-VmrTwko4.js"></script>
   <link rel="modulepreload" crossorigin href="./assets/modulepreload-polyfill-B5Qt9EMX.js">
-  <link rel="stylesheet" crossorigin href="./assets/strudel-rTCgXhy-.css">
+  <link rel="modulepreload" crossorigin href="./assets/index-BwxX6VpM.js">
+  <link rel="stylesheet" crossorigin href="./assets/strudel-TZociFqB.css">
 </head>
 <body>
 
-  <!-- Header / Transport -->
-  <header class="transport">
-    <div class="transport-logo">
-      <span class="logo-wave">〜</span>
-      <span class="logo-name">SYNTH</span>
-    </div>
+<!-- ── Transport ─────────────────────────────────────── -->
+<header class="transport" id="transport">
+  <div class="t-logo"><span class="t-wave">〜</span><span class="t-name">STRUDEL</span></div>
 
-    <button id="btn-play" class="t-btn play-btn">
-      <svg id="ico-play"  viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-      <svg id="ico-pause" viewBox="0 0 24 24" fill="currentColor" style="display:none"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
-    </button>
-    <button id="btn-stop" class="t-btn stop-btn">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h12v12H6z"/></svg>
-    </button>
+  <button class="t-btn play-btn" id="btn-play">
+    <svg id="ico-play"  viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+    <svg id="ico-pause" viewBox="0 0 24 24" fill="currentColor" style="display:none"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+  </button>
+  <button class="t-btn stop-btn" id="btn-stop">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h12v12H6z"/></svg>
+  </button>
 
-    <div class="bpm-ctrl">
-      <span class="ctrl-lbl">BPM</span>
-      <button class="bpm-arrow" id="bpm-down">−</button>
-      <span id="bpm-val" class="bpm-val">120</span>
-      <button class="bpm-arrow" id="bpm-up">+</button>
-    </div>
-
-    <div class="vol-ctrl">
-      <span class="ctrl-lbl">VOL</span>
-      <input type="range" id="master-vol" min="-30" max="0" step="1" value="-6" class="t-slider" />
-    </div>
-
-    <a href="index.html" class="t-back">← zurück</a>
-  </header>
-
-  <!-- Tab bar -->
-  <nav class="tab-bar">
-    <button class="tab active" data-tab="drums">🥁 DRUMS</button>
-    <button class="tab" data-tab="melody">🎹 MELODIE</button>
-    <button class="tab" data-tab="synth">🎛 SYNTH</button>
-    <button class="tab" data-tab="fx">✨ EFFEKTE</button>
-  </nav>
-
-  <!-- ── DRUMS TAB ── -->
-  <section id="tab-drums" class="tab-panel active">
-    <div class="sequencer" id="drum-sequencer">
-      <!-- filled by JS -->
-    </div>
-    <div class="step-indicators">
-      <!-- 16 tiny beat indicators -->
-    </div>
-  </section>
-
-  <!-- ── MELODY TAB ── -->
-  <section id="tab-melody" class="tab-panel">
-    <p class="melody-hint">① Schritt antippen  → ② Note wählen</p>
-    <div class="sequencer" id="melody-sequencer">
-      <!-- filled by JS -->
-    </div>
-    <div class="keyboard-wrap">
-      <div id="keyboard" class="keyboard">
-        <!-- filled by JS -->
-      </div>
-    </div>
-  </section>
-
-  <!-- ── SYNTH TAB ── -->
-  <section id="tab-synth" class="tab-panel">
-    <div class="synth-section">
-      <h3 class="section-title">WELLENFORM</h3>
-      <div class="wave-btns" id="wave-btns">
-        <button class="wave-btn active" data-wave="sawtooth">SAW ⋀</button>
-        <button class="wave-btn" data-wave="square">SQR ⊓</button>
-        <button class="wave-btn" data-wave="triangle">TRI △</button>
-        <button class="wave-btn" data-wave="sine">SIN ∿</button>
-      </div>
-    </div>
-
-    <div class="synth-section">
-      <h3 class="section-title">FILTER</h3>
-      <div class="knob-row">
-        <div class="knob-wrap">
-          <canvas class="knob" id="knob-cutoff" width="64" height="64" data-min="80" data-max="12000" data-val="2000" data-log="true"></canvas>
-          <span class="knob-lbl">CUTOFF</span>
-        </div>
-        <div class="knob-wrap">
-          <canvas class="knob" id="knob-res" width="64" height="64" data-min="0" data-max="15" data-val="2"></canvas>
-          <span class="knob-lbl">RESONANZ</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="synth-section">
-      <h3 class="section-title">HÜLLKURVE (ADSR)</h3>
-      <div class="knob-row">
-        <div class="knob-wrap">
-          <canvas class="knob" id="knob-attack"  width="64" height="64" data-min="0.001" data-max="2" data-val="0.01"></canvas>
-          <span class="knob-lbl">ATTACK</span>
-        </div>
-        <div class="knob-wrap">
-          <canvas class="knob" id="knob-decay"   width="64" height="64" data-min="0.01"  data-max="2" data-val="0.2"></canvas>
-          <span class="knob-lbl">DECAY</span>
-        </div>
-        <div class="knob-wrap">
-          <canvas class="knob" id="knob-sustain" width="64" height="64" data-min="0"     data-max="1" data-val="0.5"></canvas>
-          <span class="knob-lbl">SUSTAIN</span>
-        </div>
-        <div class="knob-wrap">
-          <canvas class="knob" id="knob-release" width="64" height="64" data-min="0.01"  data-max="3" data-val="0.4"></canvas>
-          <span class="knob-lbl">RELEASE</span>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ── FX TAB ── -->
-  <section id="tab-fx" class="tab-panel">
-    <div class="synth-section">
-      <h3 class="section-title">HALL (REVERB)</h3>
-      <div class="knob-row">
-        <div class="knob-wrap">
-          <canvas class="knob" id="knob-rev-wet"   width="64" height="64" data-min="0" data-max="1" data-val="0.1"></canvas>
-          <span class="knob-lbl">MIX</span>
-        </div>
-        <div class="knob-wrap">
-          <canvas class="knob" id="knob-rev-decay" width="64" height="64" data-min="0.1" data-max="8" data-val="2"></canvas>
-          <span class="knob-lbl">ABKLINGEN</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="synth-section">
-      <h3 class="section-title">ECHO (DELAY)</h3>
-      <div class="knob-row">
-        <div class="knob-wrap">
-          <canvas class="knob" id="knob-del-wet"  width="64" height="64" data-min="0"   data-max="0.8" data-val="0"></canvas>
-          <span class="knob-lbl">MIX</span>
-        </div>
-        <div class="knob-wrap">
-          <canvas class="knob" id="knob-del-feed" width="64" height="64" data-min="0"   data-max="0.85" data-val="0.3"></canvas>
-          <span class="knob-lbl">FEEDBACK</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="synth-section">
-      <h3 class="section-title">VERZERRUNG (DISTORTION)</h3>
-      <div class="knob-row">
-        <div class="knob-wrap">
-          <canvas class="knob" id="knob-dist" width="64" height="64" data-min="0" data-max="0.9" data-val="0"></canvas>
-          <span class="knob-lbl">DRIVE</span>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Visualizer bar at bottom -->
-  <div class="viz-bar">
-    <canvas id="viz-canvas" class="viz-canvas"></canvas>
+  <div class="bpm-group">
+    <button class="bpm-btn" id="bpm-dn">−</button>
+    <span id="bpm-display" class="bpm-display">120</span>
+    <button class="bpm-btn" id="bpm-up">+</button>
+    <span class="t-label">BPM</span>
   </div>
 
+  <label class="t-label">VOL
+    <input type="range" id="master-vol" class="t-range" min="-30" max="0" step="1" value="-6"/>
+  </label>
+
+  <div class="t-right">
+    <button class="t-pill" id="btn-autorun">AUTO ○</button>
+    <a href="index.html" class="t-back">← zurück</a>
+  </div>
+</header>
+
+<!-- ── Main tabs ──────────────────────────────────────── -->
+<nav class="tab-bar" id="tab-bar">
+  <button class="tab active" data-tab="seq">🎚 MIXER</button>
+  <button class="tab" data-tab="roll">🎹 PIANO ROLL</button>
+  <button class="tab" data-tab="browser">🔊 SAMPLES</button>
+  <button class="tab" data-tab="scales">🎼 SKALEN</button>
+  <button class="tab" data-tab="pattern">⚙ PATTERN</button>
+</nav>
+
+<!-- ── Content ───────────────────────────────────────── -->
+<main class="content" id="content">
+
+  <!-- MIXER -->
+  <section class="panel active" id="panel-seq">
+    <div id="track-list" class="track-list"></div>
+    <div class="add-track-row">
+      <button class="add-btn" data-type="drum">+ DRUM SPUR</button>
+      <button class="add-btn" data-type="melody">+ MELODIE SPUR</button>
+      <button class="add-btn" data-type="chord">+ AKKORD SPUR</button>
+    </div>
+  </section>
+
+  <!-- PIANO ROLL -->
+  <section class="panel" id="panel-roll">
+    <div class="roll-toolbar">
+      <span class="panel-title">PIANO ROLL</span>
+      <span id="roll-track-name" class="roll-track-lbl">— kein Melodie-Track ausgewählt —</span>
+      <div class="roll-oct-btns">
+        <button class="small-btn" id="roll-oct-dn">Oct −</button>
+        <span id="roll-oct-val" class="roll-oct">4</span>
+        <button class="small-btn" id="roll-oct-up">Oct +</button>
+      </div>
+    </div>
+    <div class="roll-wrap">
+      <canvas id="roll-canvas" class="roll-canvas"></canvas>
+    </div>
+  </section>
+
+  <!-- SAMPLE BROWSER -->
+  <section class="panel" id="panel-browser">
+    <div class="browser-head">
+      <span class="panel-title">SAMPLE BROWSER</span>
+      <span class="browser-hint">Antippen zum Hinzufügen zur ausgewählten Spur</span>
+    </div>
+    <div class="browser-cats" id="browser-cats"></div>
+    <div class="browser-grid" id="browser-grid"></div>
+  </section>
+
+  <!-- SKALEN -->
+  <section class="panel" id="panel-scales">
+    <div class="scale-section">
+      <span class="panel-title">TONART &amp; SKALA</span>
+      <div class="scale-root-btns" id="scale-roots"></div>
+      <div class="scale-type-btns" id="scale-types"></div>
+    </div>
+    <div class="scale-section">
+      <span class="section-lbl">KLAVIATUR (aktive Töne hervorgehoben)</span>
+      <div class="scale-keyboard" id="scale-keyboard"></div>
+    </div>
+    <div class="scale-section">
+      <span class="section-lbl">AKKORDFOLGE</span>
+      <div class="chord-degrees" id="chord-degrees"></div>
+      <div class="chord-preview" id="chord-preview"></div>
+      <button class="action-btn" id="insert-chords">→ In Akkord-Spur einfügen</button>
+    </div>
+  </section>
+
+  <!-- PATTERN MODIFIERS -->
+  <section class="panel" id="panel-pattern">
+    <div class="pm-section">
+      <span class="panel-title">EUKLIDISCHE RHYTHMEN</span>
+      <div class="euclid-wrap">
+        <div class="pm-row">
+          <label class="pm-lbl">Schritte (n)</label>
+          <input type="range" id="euclid-n" min="4" max="32" value="16" class="pm-slider"/>
+          <span id="euclid-n-val" class="pm-val">16</span>
+        </div>
+        <div class="pm-row">
+          <label class="pm-lbl">Beats (k)</label>
+          <input type="range" id="euclid-k" min="1" max="16" value="3" class="pm-slider"/>
+          <span id="euclid-k-val" class="pm-val">3</span>
+        </div>
+        <div class="pm-row">
+          <label class="pm-lbl">Rotation</label>
+          <input type="range" id="euclid-rot" min="0" max="15" value="0" class="pm-slider"/>
+          <span id="euclid-rot-val" class="pm-val">0</span>
+        </div>
+        <canvas id="euclid-canvas" class="euclid-canvas" width="200" height="200"></canvas>
+        <button class="action-btn" id="apply-euclid">→ Auf Spur anwenden</button>
+      </div>
+    </div>
+
+    <div class="pm-section">
+      <span class="section-lbl">GESCHWINDIGKEIT &amp; TRANSFORMATIONEN</span>
+      <div class="pm-row">
+        <label class="pm-lbl">Tempo (slow/fast)</label>
+        <input type="range" id="pm-speed" min="-3" max="3" step="1" value="0" class="pm-slider"/>
+        <span id="pm-speed-val" class="pm-val">1×</span>
+      </div>
+      <div class="pm-toggles">
+        <button class="pm-toggle" id="pm-rev">REVERSE</button>
+        <button class="pm-toggle" id="pm-jux">JUX</button>
+        <button class="pm-toggle" id="pm-palindrome">PALINDROM</button>
+      </div>
+      <div class="pm-row">
+        <label class="pm-lbl">Wahrscheinlichkeit</label>
+        <input type="range" id="pm-degrade" min="0" max="0.9" step="0.05" value="0" class="pm-slider"/>
+        <span id="pm-degrade-val" class="pm-val">100%</span>
+      </div>
+      <button class="action-btn" id="apply-pattern">→ Auf ausgewählte Spur anwenden</button>
+    </div>
+
+    <div class="pm-section">
+      <span class="section-lbl">ARPEGGIATOR (für Melodie-Spuren)</span>
+      <div class="arp-btns" id="arp-btns">
+        <button class="pm-toggle" data-arp="up">UP</button>
+        <button class="pm-toggle" data-arp="down">DOWN</button>
+        <button class="pm-toggle" data-arp="updown">UP-DOWN</button>
+        <button class="pm-toggle" data-arp="random">RANDOM</button>
+      </div>
+      <div class="pm-row">
+        <label class="pm-lbl">Noten</label>
+        <input type="range" id="arp-len" min="2" max="8" value="4" class="pm-slider"/>
+        <span id="arp-len-val" class="pm-val">4</span>
+      </div>
+      <button class="action-btn" id="apply-arp">→ Arpeggio einfügen</button>
+    </div>
+  </section>
+
+</main>
+
+<!-- ── Code Drawer ───────────────────────────────────── -->
+<div class="code-drawer" id="code-drawer">
+  <div class="code-drawer-header" id="code-drawer-toggle">
+    <span class="code-drawer-title">
+      <span id="code-drawer-arrow">▲</span>
+      STRUDEL CODE
+    </span>
+    <div class="code-drawer-actions">
+      <button class="code-action-btn" id="btn-copy-code">KOPIEREN</button>
+      <button class="code-action-btn run-btn" id="btn-run-code">▶ AUSFÜHREN</button>
+    </div>
+  </div>
+  <div class="code-editor-wrap" id="code-editor-wrap">
+    <div id="code-editor" class="code-editor"></div>
+  </div>
+</div>
+
+<!-- ── FX Panel (overlay) ────────────────────────────── -->
+<div class="fx-overlay hidden" id="fx-overlay">
+  <div class="fx-panel">
+    <div class="fx-header">
+      <span id="fx-track-name" class="fx-track-title">FX</span>
+      <button class="fx-close" id="fx-close">✕</button>
+    </div>
+    <div class="fx-knobs" id="fx-knobs"></div>
+  </div>
+</div>
 
 </body>
 </html>
