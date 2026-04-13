@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>STRUDEL — Live Coding Synthesizer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&family=Space+Grotesk:wght@300;400;600&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div id="app">
+
+    <!-- Header -->
+    <header class="s-header">
+      <div class="s-logo">
+        <span class="s-logo-wave">〜</span>
+        <span class="s-logo-text">STRUDEL</span>
+      </div>
+
+      <div class="s-controls">
+        <button id="btn-play" class="s-btn s-btn-play" title="Play (Ctrl+Enter)">
+          <svg id="icon-play" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          <svg id="icon-pause" viewBox="0 0 24 24" fill="currentColor" style="display:none"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+          <span id="btn-play-label">PLAY</span>
+        </button>
+        <button id="btn-stop" class="s-btn s-btn-stop" title="Stop (Ctrl+.)">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h12v12H6z"/></svg>
+          STOP
+        </button>
+
+        <div class="s-divider"></div>
+
+        <div class="s-control-group">
+          <label class="s-ctrl-label">BPM</label>
+          <input type="number" id="bpm" value="120" min="30" max="300" class="s-input" />
+        </div>
+
+        <div class="s-control-group">
+          <label class="s-ctrl-label">VOL</label>
+          <input type="range" id="volume" min="0" max="1" step="0.01" value="0.8" class="s-slider" />
+        </div>
+      </div>
+
+      <a href="index.html" class="s-back-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M19 12H5M5 12l7-7M5 12l7 7"/></svg>
+        PORTFOLIO
+      </a>
+    </header>
+
+    <!-- Main layout -->
+    <main class="s-main">
+
+      <!-- Left: Code Editor -->
+      <section class="s-editor-panel">
+        <div class="s-panel-header">
+          <span class="s-panel-label">EDITOR</span>
+          <div class="s-presets">
+            <span class="s-presets-label">PRESETS</span>
+            <button class="s-preset-btn" data-preset="0">DRUMS</button>
+            <button class="s-preset-btn" data-preset="1">MELODIE</button>
+            <button class="s-preset-btn" data-preset="2">AMBIENT</button>
+            <button class="s-preset-btn" data-preset="3">KOMPLEX</button>
+          </div>
+        </div>
+
+        <div id="editor" class="s-editor"></div>
+
+        <div class="s-editor-footer">
+          <span class="s-hint"><kbd>Ctrl</kbd><kbd>↵</kbd> ausführen &nbsp;·&nbsp; <kbd>Ctrl</kbd><kbd>.</kbd> stop</span>
+          <div id="eval-status" class="s-eval-status"></div>
+        </div>
+      </section>
+
+      <!-- Right: Visualization -->
+      <section class="s-viz-panel">
+        <div class="s-panel-header">
+          <span class="s-panel-label">VISUALIZER</span>
+          <div class="s-viz-tabs">
+            <button class="s-viz-tab active" data-viz="spectrum">SPEKTRUM</button>
+            <button class="s-viz-tab" data-viz="waveform">WELLE</button>
+            <button class="s-viz-tab" data-viz="pianoroll">NOTEN</button>
+          </div>
+        </div>
+
+        <div class="s-canvas-container">
+          <canvas id="canvas-spectrum" class="s-canvas active"></canvas>
+          <canvas id="canvas-waveform" class="s-canvas"></canvas>
+          <canvas id="canvas-pianoroll" class="s-canvas"></canvas>
+        </div>
+
+        <div class="s-info-bar">
+          <div class="s-info-item">
+            <span class="s-info-label">STATUS</span>
+            <span id="play-status" class="s-info-value s-status-stopped">GESTOPPT</span>
+          </div>
+          <div class="s-info-item">
+            <span class="s-info-label">TAKT</span>
+            <span id="cycle-val" class="s-info-value">—</span>
+          </div>
+          <div class="s-info-item">
+            <span class="s-info-label">EVENTS</span>
+            <span id="event-val" class="s-info-value">—</span>
+          </div>
+          <div class="s-info-item">
+            <span class="s-info-label">FREQ</span>
+            <span id="freq-val" class="s-info-value">—</span>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Error toast -->
+    <div id="error-panel" class="s-error hidden">
+      <svg class="s-error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+      </svg>
+      <pre id="error-message" class="s-error-message"></pre>
+      <button id="error-close" class="s-error-close">✕</button>
+    </div>
+
+  </div><!-- #app -->
+
+  <script type="module" src="/src/strudel-app.ts"></script>
+</body>
+</html>

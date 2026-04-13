@@ -179,6 +179,8 @@ button:hover ~ .cursor-ring { width: 48px; height: 48px; }
   transition: color .2s;
 }
 .nav-links a:hover { color: var(--gold); }
+.nav-strudel { color: #00d4ff !important; }
+.nav-strudel:hover { color: #b06aff !important; }
 
 /* =========================================
    SCROLL TRACK (right edge)
