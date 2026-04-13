@@ -389,13 +389,14 @@ button{cursor:pointer;font-family:inherit;}
   transition:height .25s ease;
   height:44px;
 }
-.code-drawer.expanded{height:280px;}
+.code-drawer.expanded,.code-drawer.open{height:280px;}
 .code-drawer-header{
   display:flex;align-items:center;gap:8px;
   padding:0 12px;height:44px;cursor:pointer;
   border-bottom:1px solid transparent;
 }
-.code-drawer.expanded .code-drawer-header{
+.code-drawer.expanded .code-drawer-header,
+.code-drawer.open .code-drawer-header{
   border-bottom-color:var(--border);
 }
 .code-drawer-title{
@@ -418,7 +419,8 @@ button{cursor:pointer;font-family:inherit;}
   height:236px;overflow:hidden;
   display:none;
 }
-.code-drawer.expanded .code-editor-wrap{display:block;}
+.code-drawer.expanded .code-editor-wrap,
+.code-drawer.open .code-editor-wrap{display:block;}
 .code-editor{height:100%;}
 .code-editor .cm-editor{height:100%;background:var(--bg) !important;font-size:12px;}
 .code-editor .cm-scroller{
@@ -465,6 +467,84 @@ button{cursor:pointer;font-family:inherit;}
 .knob-lbl{
   font-family:'JetBrains Mono',monospace;font-size:8px;
   font-weight:700;letter-spacing:.1em;color:var(--muted);text-align:center;
+}
+
+/* ── Piano keys (scale keyboard) ───────────────────── */
+.piano-key{
+  display:inline-block;position:relative;
+  cursor:pointer;border-radius:0 0 3px 3px;
+  font-family:'JetBrains Mono',monospace;font-size:7px;
+  display:flex;align-items:flex-end;justify-content:center;
+  padding-bottom:3px;transition:background .1s;
+}
+.piano-key.white{
+  width:28px;height:60px;flex-shrink:0;
+  background:linear-gradient(to bottom,#ddd,#fff);
+  border:1px solid #888;margin-right:1px;z-index:1;
+  color:#555;
+}
+.piano-key.black{
+  width:18px;height:36px;flex-shrink:0;
+  background:linear-gradient(to bottom,#222,#111);
+  border:1px solid #000;border-radius:0 0 3px 3px;
+  margin-left:-9px;margin-right:-9px;z-index:2;
+}
+.piano-key.white.in-scale{background:linear-gradient(to bottom,#a3e635,#84cc16);color:#1a2e05;}
+.piano-key.black.in-scale{background:linear-gradient(to bottom,#4d7c0f,#365314);}
+
+/* ── Degree button (chord progression) ─────────────── */
+.degree-btn{
+  flex:1;min-width:38px;padding:8px 4px;
+  border:1px solid var(--border);border-radius:6px;
+  background:var(--panel2);color:var(--muted);
+  font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;
+  text-align:center;transition:all .12s;
+}
+.degree-btn.active{border-color:var(--blue);color:var(--blue);background:rgba(59,130,246,.1);}
+
+/* ── Chord pill ─────────────────────────────────────── */
+.chord-pill{
+  display:inline-block;
+  padding:3px 8px;border-radius:12px;
+  background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);
+  color:var(--cyan);font-family:'JetBrains Mono',monospace;font-size:10px;
+  margin:2px;
+}
+
+/* ── FX knob wrap ───────────────────────────────────── */
+.fx-knob-wrap{
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+}
+.fx-knob-canvas{cursor:ns-resize;touch-action:none;}
+.fx-val{
+  font-family:'JetBrains Mono',monospace;font-size:9px;
+  font-weight:700;color:var(--cyan);text-align:center;min-width:40px;
+}
+.fx-lbl{
+  font-family:'JetBrains Mono',monospace;font-size:8px;
+  font-weight:700;letter-spacing:.1em;color:var(--muted);text-align:center;
+}
+
+/* ── Browser section ────────────────────────────────── */
+.browser-section{margin-bottom:14px;}
+.browser-bank-head{
+  font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;
+  letter-spacing:.12em;color:var(--muted);margin-bottom:6px;
+}
+.browser-bank-grid{
+  display:flex;flex-wrap:wrap;gap:4px;
+}
+.browser-chip{
+  padding:6px 10px;border:1px solid var(--border);border-radius:5px;
+  background:var(--panel2);color:var(--text);
+  font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;
+  transition:all .12s;
+}
+.browser-chip:hover,.browser-chip:active{
+  border-color:var(--orange);color:var(--orange);background:rgba(249,115,22,.1);
+}
+.browser-chip.applied{
+  border-color:var(--green);color:var(--green);background:rgba(0,255,136,.1);
 }
 
 /* ── Misc ───────────────────────────────────────────── */
