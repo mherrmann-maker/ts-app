@@ -14,7 +14,7 @@ declare module '@strudel/core' {
     hush: () => void;
     scheduler: any;
   };
-  export function evalScope(...args: any[]): Promise<void>;
+  export function evalScope(...moduleImports: Promise<any>[]): Promise<void>;
   export function stack(...patterns: any[]): any;
   export function note(input: any): any;
   export function sound(input: any): any;

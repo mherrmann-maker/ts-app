@@ -144,8 +144,17 @@ async function initAudioChain(): Promise<void> {
 async function initStrudel(): Promise<void> {
   await initAudioChain();
 
-  const { repl }              = await import('@strudel/core');
+  const { repl, evalScope } = await import('@strudel/core');
   const { webaudioOutput, getAudioContext } = await import('@strudel/webaudio');
+
+  // Put all Strudel functions (note, sound, stack, …) on globalThis so
+  // user code evaluated via repl.evaluate() can access them.
+  await evalScope(
+    import('@strudel/core'),
+    import('@strudel/mini'),
+    import('@strudel/webaudio'),
+  );
+
   const ctx = getAudioContext() as AudioContext;
 
   strudelRepl = repl({
