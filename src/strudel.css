@@ -443,4 +443,87 @@ html, body {
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+
+/* ── Mobile tab switcher ──────────────────────────────────────────── */
+.s-mobile-tabs {
+  display: none;
+  flex-shrink: 0;
+}
+
+/* ── Mobile layout (≤ 768 px) ────────────────────────────────────── */
+@media (max-width: 768px) {
+  html, body { overflow: hidden; }
+
+  /* Kompakterer Header */
+  .s-header {
+    padding: 0 12px;
+    height: 50px;
+    gap: 8px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+  .s-logo-text { display: none; }
+  .s-divider   { display: none; }
+  .s-control-group:last-child { display: none; } /* Volume ausblenden */
+  .s-back-link span { display: none; }
+  .s-btn { padding: 5px 10px; font-size: 10px; }
+
+  /* Mobile Tab-Leiste zwischen Header und Inhalt */
+  .s-mobile-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg2);
+  }
+  .s-mobile-tab {
+    flex: 1;
+    padding: 10px;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .s-mobile-tab.active {
+    color: var(--cyan);
+    border-bottom-color: var(--cyan);
+  }
+
+  /* Hauptbereich: übereinander statt nebeneinander */
+  .s-main {
+    flex-direction: column;
+    position: relative;
+  }
+
+  /* Beide Panels nehmen volle Breite & Höhe */
+  .s-editor-panel,
+  .s-viz-panel {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    border: none;
+    transition: opacity 0.2s, transform 0.2s;
+  }
+  .s-editor-panel.s-hidden,
+  .s-viz-panel.s-hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(8px);
+  }
+
+  /* Preset-Labels kürzen */
+  .s-presets-label { display: none; }
+  .s-preset-btn { padding: 3px 8px; font-size: 9px; }
+
+  /* Viz-Tab-Leiste scrollen */
+  .s-viz-tabs { overflow-x: auto; gap: 2px; }
+
+  /* Info-Bar kleiner */
+  .s-info-value { font-size: 11px; }
+  .s-info-label { font-size: 7px; }
+}
 ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }

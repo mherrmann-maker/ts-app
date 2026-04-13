@@ -612,6 +612,19 @@ function init(): void {
   // Error close
   document.getElementById('error-close')!.addEventListener('click', clearError);
 
+  // Mobile panel switcher
+  document.querySelectorAll<HTMLButtonElement>('.s-mobile-tab').forEach((tab) => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.s-mobile-tab').forEach((t) => t.classList.remove('active'));
+      tab.classList.add('active');
+      const target = tab.dataset.panel;
+      const editorPanel = document.querySelector<HTMLElement>('.s-editor-panel')!;
+      const vizPanel    = document.querySelector<HTMLElement>('.s-viz-panel')!;
+      editorPanel.classList.toggle('s-hidden', target !== 'editor');
+      vizPanel.classList.toggle('s-hidden',    target !== 'viz');
+    });
+  });
+
   // Start render loop
   renderFrame();
 }
