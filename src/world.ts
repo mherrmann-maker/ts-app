@@ -3,6 +3,12 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js'
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js'
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
+import {
+  createWetPebbleMaterial,
+  createConcreteMaterial,
+  createWoodMaterial,
+  tickArchMaterials,
+} from './archMaterials'
 
 // ─── Camera path waypoints ─────────────────────────────────────────────────
 const CAM_PTS = [
@@ -110,6 +116,7 @@ export function initWorld(canvas: HTMLCanvasElement): void {
   buildHero()
   buildFloaters()
   buildPortals()
+  buildArchFloor()
   buildPostFX()
 
   window.addEventListener('resize', onResize)
@@ -237,8 +244,8 @@ function buildFloaters(): void {
 
   for (const d of defs) {
     const mat = new THREE.MeshStandardMaterial({
-      color: d.color, emissive: d.emit, emissiveIntensity: 0.4,
-      metalness: 0.85, roughness: 0.15, emissiveIntensity: 0.12,
+      color: d.color, emissive: d.emit, emissiveIntensity: 0.12,
+      metalness: 0.85, roughness: 0.15,
     })
     const mesh = new THREE.Mesh(d.geo, mat)
     mesh.position.set(d.x, d.y, d.z)
@@ -291,6 +298,29 @@ function buildPortals(): void {
   }
 }
 
+// ─── Architectural floor demo ─────────────────────────────────────────────────
+function buildArchFloor(): void {
+  // Wet pebble floor running the length of the camera path
+  const floorGeo = new THREE.PlaneGeometry(12, 56, 1, 1)
+  floorGeo.rotateX(-Math.PI / 2)
+  const floor = new THREE.Mesh(floorGeo, createWetPebbleMaterial())
+  floor.position.set(0, -2.2, -17)
+  scene.add(floor)
+
+  // Concrete back wall at the end of the path
+  const wallGeo = new THREE.PlaneGeometry(12, 7, 1, 1)
+  const wall = new THREE.Mesh(wallGeo, createConcreteMaterial())
+  wall.position.set(0, 1.3, -43)
+  scene.add(wall)
+
+  // Wood panel strip above floor level (side wall taste)
+  const woodGeo = new THREE.PlaneGeometry(12, 2.5, 1, 1)
+  woodGeo.rotateY(Math.PI / 2)
+  const wood = new THREE.Mesh(woodGeo, createWoodMaterial())
+  wood.position.set(-7, -1.0, -24)
+  scene.add(wood)
+}
+
 // ─── Post FX ───────────────────────────────────────────────────────────────
 function buildPostFX(): void {
   composer = new EffectComposer(renderer)
@@ -332,6 +362,7 @@ export function tick(): void {
   const e = clock.getElapsedTime()
 
   if (particleMaterial) particleMaterial.uniforms.uTime.value = e
+  tickArchMaterials(e)
 
   // Hero rotation
   heroMesh.rotation.y = e * 0.09
