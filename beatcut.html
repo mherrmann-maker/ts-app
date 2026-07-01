@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BeatCut – Musik-Rhythmus Video-Editor</title>
+  </head>
+  <body>
+    <div id="app">
+      <header>
+        <h1>BeatCut</h1>
+        <p>
+          Lade Musik hoch – BeatCut erkennt die Rhythmik und schneidet aus deinen Bildern und
+          Videoclips automatisch ein komplettes Video auf den Beat. Alles läuft lokal im Browser.
+        </p>
+      </header>
+
+      <section class="panel">
+        <div class="picker">
+          <span class="step">1 · Musik</span>
+          <input type="file" id="audio-input" accept="audio/*" />
+          <div id="audio-info" class="info">Noch keine Musik geladen.</div>
+        </div>
+        <div class="picker">
+          <span class="step">2 · Bilder-Ordner</span>
+          <input type="file" id="image-input" webkitdirectory multiple />
+          <div id="image-info" class="info">Noch keine Bilder geladen.</div>
+        </div>
+        <div class="picker">
+          <span class="step">3 · Videoclip-Ordner</span>
+          <input type="file" id="video-input" webkitdirectory multiple />
+          <div id="video-info" class="info">Noch keine Clips geladen.</div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <canvas id="wave" width="1200" height="120"></canvas>
+      </section>
+
+      <section class="panel settings">
+        <label>
+          Schnitt alle
+          <select id="beats-per-cut">
+            <option value="1">1</option>
+            <option value="2" selected>2</option>
+            <option value="4">4</option>
+            <option value="8">8</option>
+          </select>
+          Beats
+        </label>
+        <label>
+          Auflösung
+          <select id="resolution">
+            <option value="1280x720" selected>1280 × 720</option>
+            <option value="1920x1080">1920 × 1080</option>
+            <option value="1080x1920">1080 × 1920 (Hochformat)</option>
+          </select>
+        </label>
+        <label><input type="checkbox" id="flash" checked /> Beat-Blitz</label>
+      </section>
+
+      <section class="panel actions">
+        <button id="btn-preview" disabled>▶ Vorschau</button>
+        <button id="btn-export" disabled>⬇ Video exportieren (WebM)</button>
+        <button id="btn-stop" disabled>⏹ Stopp</button>
+        <progress id="progress" value="0" max="1"></progress>
+        <div id="status">Musik sowie Bilder oder Clips auswählen, um zu starten.</div>
+      </section>
+
+      <section class="panel stage-wrap">
+        <canvas id="stage" width="1280" height="720"></canvas>
+      </section>
+    </div>
+    <script type="module" src="/src/beatcut/main.ts"></script>
+  </body>
+</html>

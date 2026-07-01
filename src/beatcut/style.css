@@ -1,0 +1,134 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #0b0d10;
+  color: #e8e6e3;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  line-height: 1.5;
+}
+
+#app {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 32px 20px 64px;
+}
+
+header h1 {
+  margin: 0 0 4px;
+  font-size: 2rem;
+  letter-spacing: 0.08em;
+}
+
+header p {
+  margin: 0 0 24px;
+  color: #9aa0a6;
+  max-width: 720px;
+}
+
+.panel {
+  background: #14171c;
+  border: 1px solid #232830;
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+}
+
+.panel:has(#wave) {
+  padding: 8px;
+}
+
+.picker {
+  display: grid;
+  grid-template-columns: 170px 1fr 1fr;
+  gap: 12px;
+  align-items: center;
+  padding: 6px 0;
+}
+
+.picker .step {
+  font-weight: 600;
+  color: #d3b98a;
+}
+
+.picker input[type='file'] {
+  color: #9aa0a6;
+}
+
+.info {
+  color: #9aa0a6;
+  font-size: 0.9rem;
+}
+
+#wave {
+  display: block;
+  width: 100%;
+  height: 120px;
+  border-radius: 6px;
+  background: #0b0d10;
+}
+
+.settings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  align-items: center;
+}
+
+.settings select {
+  background: #0b0d10;
+  color: #e8e6e3;
+  border: 1px solid #232830;
+  border-radius: 6px;
+  padding: 4px 8px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.actions button {
+  background: #d3b98a;
+  color: #14120d;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 18px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.actions button:disabled {
+  background: #2a2f38;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+.actions progress {
+  flex: 1 1 160px;
+  height: 8px;
+  accent-color: #d3b98a;
+}
+
+#status {
+  flex-basis: 100%;
+  color: #9aa0a6;
+  font-size: 0.9rem;
+  min-height: 1.4em;
+}
+
+.stage-wrap {
+  padding: 8px;
+}
+
+#stage {
+  display: block;
+  width: 100%;
+  border-radius: 6px;
+  background: #000;
+}
