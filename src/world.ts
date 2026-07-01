@@ -237,7 +237,7 @@ function buildFloaters(): void {
 
   for (const d of defs) {
     const mat = new THREE.MeshStandardMaterial({
-      color: d.color, emissive: d.emit, emissiveIntensity: 0.4,
+      color: d.color, emissive: d.emit,
       metalness: 0.85, roughness: 0.15, emissiveIntensity: 0.12,
     })
     const mesh = new THREE.Mesh(d.geo, mat)
