@@ -6,6 +6,7 @@ on:
       - main
       - claude/install-github-app-W4Nga
       - claude/strudel-visual-interface-wnYhg
+  workflow_dispatch:
 
 permissions:
   contents: write
