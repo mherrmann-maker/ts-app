@@ -108,6 +108,18 @@ canvas{touch-action:none;}
 .play-btn:active{box-shadow:0 0 22px rgba(0,255,136,.4);}
 .stop-btn{color:var(--red);}
 .stop-btn:active{border-color:rgba(244,63,94,.5);box-shadow:0 0 16px rgba(244,63,94,.3);}
+.dice-btn{
+  border-color:rgba(251,191,36,.45);
+  box-shadow:0 4px 18px rgba(251,191,36,.18), inset 0 1px 0 rgba(255,255,255,.08);
+}
+.dice-btn:active{box-shadow:0 0 22px rgba(251,191,36,.45);}
+.dice-ico{font-size:19px;line-height:1;display:block;}
+.dice-ico.rolling{animation:diceRoll .5s cubic-bezier(.3,1.4,.5,1);}
+@keyframes diceRoll{
+  0%{transform:rotate(0) scale(1);}
+  50%{transform:rotate(260deg) scale(1.25);}
+  100%{transform:rotate(360deg) scale(1);}
+}
 
 .bpm-group{
   display:flex;align-items:center;gap:6px;flex-shrink:0;

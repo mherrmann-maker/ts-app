@@ -12,6 +12,7 @@ import { generateCode } from './daw/codegen';
 import { initEditor, updateEditorCode, getEditorCode } from './daw/editor';
 import { playStrudel, stopStrudel, warmupStrudel, onStrudelError } from './daw/strudel-engine';
 import { initMoog } from './daw/moog';
+import { randomizeProject } from './daw/randomizer';
 import { MelodyTrack, ChordTrack, DrumTrack } from './daw/types';
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
@@ -183,6 +184,24 @@ btnEngine?.addEventListener('click', () => {
 
 // Pre-warm Strudel (loads 808/909/Piano-Samples) on the very first touch
 document.addEventListener('pointerdown', () => warmupStrudel(), { once: true });
+
+// ─── Random Create ────────────────────────────────────────────────────────────
+
+const btnRandom = document.getElementById('btn-random');
+btnRandom?.addEventListener('click', () => {
+  const ico = btnRandom.querySelector('.dice-ico');
+  ico?.classList.remove('rolling');
+  void (ico as HTMLElement)?.offsetWidth; // restart animation
+  ico?.classList.add('rolling');
+
+  randomizeProject();
+  state.tracks.forEach(t => rebuildSequence(t.id));
+  renderTracks();
+  renderScalePanel();
+  updatePianoRoll();
+  codeChanged();
+  showToast(`🎲 ${state.scale.root} ${state.scale.type} — neuer Zufalls-Groove`, false);
+});
 
 // ─── Tabs ─────────────────────────────────────────────────────────────────────
 
