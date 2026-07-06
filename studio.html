@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>VK MOTION STUDIO</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <header id="topbar">
+    <div class="brand">VK <span>MOTION STUDIO</span></div>
+    <div class="topbar-group">
+      <button id="btn-new" title="Neues Projekt">Neu</button>
+      <button id="btn-load" title="Projekt laden (.json)">Laden</button>
+      <button id="btn-save" title="Projekt speichern (.json)">Speichern</button>
+      <input type="file" id="file-load" accept="application/json" hidden />
+    </div>
+    <div class="topbar-spacer"></div>
+    <div class="topbar-group">
+      <select id="export-res" title="Export-Auflösung">
+        <option value="viewport">Viewport</option>
+        <option value="1080p" selected>1080p · 1920×1080</option>
+        <option value="square">Quadrat · 1080×1080</option>
+        <option value="vertical">Hochkant · 1080×1920</option>
+      </select>
+      <button id="btn-png" title="Aktuellen Frame als PNG exportieren">PNG</button>
+      <button id="btn-export" class="accent" title="Clip als Video exportieren">⬇ Export Video</button>
+    </div>
+  </header>
+
+  <main id="app">
+    <aside id="left">
+      <section class="panel">
+        <h3>Punktwolken</h3>
+        <div class="obj-grid">
+          <button data-add="cloudSphere">✸ Kugel</button>
+          <button data-add="cloudKnot">✸ Knoten</button>
+          <button data-add="cloudTorus">✸ Torus</button>
+          <button data-add="cloudWave">≈ Welle</button>
+        </div>
+        <h3>Objekte · 3D</h3>
+        <div class="obj-grid">
+          <button data-add="box">◼ Würfel</button>
+          <button data-add="sphere">● Kugel</button>
+          <button data-add="torus">◯ Torus</button>
+          <button data-add="torusKnot">✦ Knoten</button>
+          <button data-add="icosahedron">◆ Ikosaeder</button>
+          <button data-add="cone">▲ Kegel</button>
+          <button data-add="cylinder">▮ Zylinder</button>
+        </div>
+        <h3>Objekte · 2D</h3>
+        <div class="obj-grid">
+          <button data-add="rect">▭ Rechteck</button>
+          <button data-add="circle">⬤ Kreis</button>
+          <button data-add="ring">◎ Ring</button>
+          <button data-add="star">★ Stern</button>
+          <button data-add="triangle">△ Dreieck</button>
+          <button data-add="text">T Text</button>
+        </div>
+        <h3>Extras</h3>
+        <div class="obj-grid">
+          <button data-add="particles">✳ Partikel</button>
+          <button data-add="pointLight">☀ Licht</button>
+        </div>
+      </section>
+      <section class="panel grow">
+        <h3>Szene</h3>
+        <ul id="scene-list"></ul>
+      </section>
+    </aside>
+
+    <div id="viewport">
+      <canvas id="stage"></canvas>
+      <div id="vp-tools">
+        <button id="mode-translate" class="on" title="Verschieben (W)">✥</button>
+        <button id="mode-rotate" title="Drehen (E)">⟳</button>
+        <button id="mode-scale" title="Skalieren (R)">⤢</button>
+      </div>
+      <button id="fab-left" class="fab" title="Objekte">☰</button>
+      <button id="fab-right" class="fab" title="Eigenschaften">⚙</button>
+      <div id="hints">Linksklick: auswählen · W/E/R: Verschieben/Drehen/Skalieren · Leertaste: Play · Entf: löschen</div>
+    </div>
+
+    <aside id="right">
+      <section class="panel grow" id="props"></section>
+    </aside>
+  </main>
+
+  <footer id="timeline">
+    <div id="transport">
+      <button id="btn-rewind" title="Zum Anfang">⏮</button>
+      <button id="btn-play" title="Play/Pause (Leertaste)">▶</button>
+      <span id="time-display">0.00 / 8.00 s</span>
+      <button id="btn-loop" class="toggle on" title="Loop">Loop</button>
+      <button id="btn-autokey" class="toggle on" title="Automatisch Keyframes beim Bearbeiten setzen">Auto-Key</button>
+      <label class="tsel">Easing
+        <select id="easing-select">
+          <option value="easeInOut" selected>Ease In-Out</option>
+          <option value="linear">Linear</option>
+          <option value="easeIn">Ease In</option>
+          <option value="easeOut">Ease Out</option>
+          <option value="back">Back</option>
+          <option value="elastic">Elastisch</option>
+          <option value="bounce">Bounce</option>
+        </select>
+      </label>
+      <button id="btn-key" title="Keyframe für ausgewähltes Objekt setzen">◆ Keyframe</button>
+      <button id="btn-camkey" title="Keyframe für Kamera setzen">📷 Kamera-KF</button>
+    </div>
+    <div id="tracks"></div>
+  </footer>
+
+  <div id="backdrop"></div>
+
+  <div id="export-overlay" hidden>
+    <div class="export-box">
+      <h3>Clip wird exportiert …</h3>
+      <div class="export-bar"><div id="export-progress"></div></div>
+      <p id="export-status">0 %</p>
+    </div>
+  </div>
+
+  <script type="module" src="/src/studio/main.ts"></script>
+</body>
+</html>
