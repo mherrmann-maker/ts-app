@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no,viewport-fit=cover"/>
+  <meta name="theme-color" content="#08080d"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <title>STRUDEL DAW</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@400;600&display=swap" rel="stylesheet"/>
+  <script type="module" crossorigin src="./assets/strudel-CIV7Qujv.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/modulepreload-polyfill-B5Qt9EMX.js">
+  <link rel="modulepreload" crossorigin href="./assets/index-CWjKhJIc.js">
+  <link rel="stylesheet" crossorigin href="./assets/strudel-FrP-uriy.css">
+</head>
+<body>
+
+<!-- ── Transport ─────────────────────────────────────── -->
+<header class="transport" id="transport">
+  <div class="t-logo"><span class="t-wave">〜</span><span class="t-name">STRUDEL</span></div>
+
+  <button class="t-btn play-btn" id="btn-play">
+    <svg id="ico-play"  viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+    <svg id="ico-pause" viewBox="0 0 24 24" fill="currentColor" style="display:none"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+  </button>
+  <button class="t-btn stop-btn" id="btn-stop">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h12v12H6z"/></svg>
+  </button>
+
+  <div class="bpm-group">
+    <button class="bpm-btn" id="bpm-dn">−</button>
+    <span id="bpm-display" class="bpm-display">120</span>
+    <button class="bpm-btn" id="bpm-up">+</button>
+    <span class="t-label">BPM</span>
+  </div>
+
+  <label class="t-label">VOL
+    <input type="range" id="master-vol" class="t-range" min="-30" max="0" step="1" value="-6"/>
+  </label>
+
+  <div class="t-right">
+    <button class="t-pill" id="btn-engine" title="Audio-Engine wechseln">⚡ TONE</button>
+    <button class="t-pill" id="btn-autorun">AUTO ○</button>
+    <a href="index.html" class="t-back">← zurück</a>
+  </div>
+</header>
+
+<!-- ── Main tabs ──────────────────────────────────────── -->
+<nav class="tab-bar" id="tab-bar">
+  <button class="tab active" data-tab="seq">🎚 MIXER</button>
+  <button class="tab" data-tab="roll">🎹 PIANO ROLL</button>
+  <button class="tab" data-tab="browser">🔊 SAMPLES</button>
+  <button class="tab" data-tab="scales">🎼 SKALEN</button>
+  <button class="tab" data-tab="pattern">⚙ PATTERN</button>
+</nav>
+
+<!-- ── Content ───────────────────────────────────────── -->
+<main class="content" id="content">
+
+  <!-- MIXER -->
+  <section class="panel active" id="panel-seq">
+    <div id="track-list" class="track-list"></div>
+    <div class="add-track-row">
+      <button class="add-btn" data-type="drum">+ DRUM SPUR</button>
+      <button class="add-btn" data-type="melody">+ MELODIE SPUR</button>
+      <button class="add-btn" data-type="chord">+ AKKORD SPUR</button>
+    </div>
+  </section>
+
+  <!-- PIANO ROLL -->
+  <section class="panel" id="panel-roll">
+    <div class="roll-toolbar">
+      <span class="panel-title">PIANO ROLL</span>
+      <span id="roll-track-name" class="roll-track-lbl">— kein Melodie-Track ausgewählt —</span>
+      <div class="roll-oct-btns">
+        <button class="small-btn" id="roll-oct-dn">Oct −</button>
+        <span id="roll-oct-val" class="roll-oct">4</span>
+        <button class="small-btn" id="roll-oct-up">Oct +</button>
+      </div>
+    </div>
+    <div class="roll-wrap">
+      <canvas id="roll-canvas" class="roll-canvas"></canvas>
+    </div>
+  </section>
+
+  <!-- SAMPLE BROWSER -->
+  <section class="panel" id="panel-browser">
+    <div class="browser-head">
+      <span class="panel-title">SAMPLE BROWSER</span>
+      <span class="browser-hint">Antippen zum Hinzufügen zur ausgewählten Spur</span>
+    </div>
+    <div class="browser-cats" id="browser-cats"></div>
+    <div class="browser-grid" id="browser-grid"></div>
+  </section>
+
+  <!-- SKALEN -->
+  <section class="panel" id="panel-scales">
+    <div class="scale-section">
+      <span class="panel-title">TONART &amp; SKALA</span>
+      <div class="scale-root-btns" id="scale-roots"></div>
+      <div class="scale-type-btns" id="scale-types"></div>
+    </div>
+    <div class="scale-section">
+      <span class="section-lbl">KLAVIATUR (aktive Töne hervorgehoben)</span>
+      <div class="scale-keyboard" id="scale-keyboard"></div>
+    </div>
+    <div class="scale-section">
+      <span class="section-lbl">AKKORDFOLGE</span>
+      <div class="chord-degrees" id="chord-degrees"></div>
+      <div class="chord-preview" id="chord-preview"></div>
+      <button class="action-btn" id="insert-chords">→ In Akkord-Spur einfügen</button>
+    </div>
+  </section>
+
+  <!-- PATTERN MODIFIERS -->
+  <section class="panel" id="panel-pattern">
+    <div class="pm-section">
+      <span class="panel-title">EUKLIDISCHE RHYTHMEN</span>
+      <div class="euclid-wrap">
+        <div class="pm-row">
+          <label class="pm-lbl">Schritte (n)</label>
+          <input type="range" id="euclid-n" min="4" max="32" value="16" class="pm-slider"/>
+          <span id="euclid-n-val" class="pm-val">16</span>
+        </div>
+        <div class="pm-row">
+          <label class="pm-lbl">Beats (k)</label>
+          <input type="range" id="euclid-k" min="1" max="16" value="3" class="pm-slider"/>
+          <span id="euclid-k-val" class="pm-val">3</span>
+        </div>
+        <div class="pm-row">
+          <label class="pm-lbl">Rotation</label>
+          <input type="range" id="euclid-rot" min="0" max="15" value="0" class="pm-slider"/>
+          <span id="euclid-rot-val" class="pm-val">0</span>
+        </div>
+        <canvas id="euclid-canvas" class="euclid-canvas" width="200" height="200"></canvas>
+        <button class="action-btn" id="apply-euclid">→ Auf Spur anwenden</button>
+      </div>
+    </div>
+
+    <div class="pm-section">
+      <span class="section-lbl">GESCHWINDIGKEIT &amp; TRANSFORMATIONEN</span>
+      <div class="pm-row">
+        <label class="pm-lbl">Tempo (slow/fast)</label>
+        <input type="range" id="pm-speed" min="-3" max="3" step="1" value="0" class="pm-slider"/>
+        <span id="pm-speed-val" class="pm-val">1×</span>
+      </div>
+      <div class="pm-toggles">
+        <button class="pm-toggle" id="pm-rev">REVERSE</button>
+        <button class="pm-toggle" id="pm-jux">JUX</button>
+        <button class="pm-toggle" id="pm-palindrome">PALINDROM</button>
+      </div>
+      <div class="pm-row">
+        <label class="pm-lbl">Wahrscheinlichkeit</label>
+        <input type="range" id="pm-degrade" min="0" max="0.9" step="0.05" value="0" class="pm-slider"/>
+        <span id="pm-degrade-val" class="pm-val">100%</span>
+      </div>
+      <button class="action-btn" id="apply-pattern">→ Auf ausgewählte Spur anwenden</button>
+    </div>
+
+    <div class="pm-section">
+      <span class="section-lbl">ARPEGGIATOR (für Melodie-Spuren)</span>
+      <div class="arp-btns" id="arp-btns">
+        <button class="pm-toggle" data-arp="up">UP</button>
+        <button class="pm-toggle" data-arp="down">DOWN</button>
+        <button class="pm-toggle" data-arp="updown">UP-DOWN</button>
+        <button class="pm-toggle" data-arp="random">RANDOM</button>
+      </div>
+      <div class="pm-row">
+        <label class="pm-lbl">Noten</label>
+        <input type="range" id="arp-len" min="2" max="8" value="4" class="pm-slider"/>
+        <span id="arp-len-val" class="pm-val">4</span>
+      </div>
+      <button class="action-btn" id="apply-arp">→ Arpeggio einfügen</button>
+    </div>
+  </section>
+
+</main>
+
+<!-- ── Code Drawer ───────────────────────────────────── -->
+<div class="code-drawer" id="code-drawer">
+  <div class="code-drawer-header" id="code-drawer-toggle">
+    <span class="code-drawer-title">
+      <span id="code-drawer-arrow">▲</span>
+      STRUDEL CODE
+    </span>
+    <div class="code-drawer-actions">
+      <button class="code-action-btn" id="btn-copy-code">KOPIEREN</button>
+      <button class="code-action-btn run-btn" id="btn-run-code">▶ AUSFÜHREN</button>
+    </div>
+  </div>
+  <div class="code-editor-wrap" id="code-editor-wrap">
+    <div id="code-editor" class="code-editor"></div>
+  </div>
+</div>
+
+<!-- ── FX Panel (overlay) ────────────────────────────── -->
+<div class="fx-overlay hidden" id="fx-overlay">
+  <div class="fx-panel">
+    <div class="fx-header">
+      <span id="fx-track-name" class="fx-track-title">FX</span>
+      <button class="fx-close" id="fx-close">✕</button>
+    </div>
+    <div class="fx-knobs" id="fx-knobs"></div>
+  </div>
+</div>
+
+</body>
+</html>
