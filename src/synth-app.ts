@@ -3,7 +3,7 @@ import * as Tone from 'tone';
 import { state, loadDefaultProject, selectedTrack, addTrack } from './daw/state';
 import {
   initAudio, startTransport, stopTransport, setBpm, getBpm,
-  onStep, rebuildSequence, applyFx, disposeChain,
+  onStep, rebuildSequence, applyFx, disposeChain, setSwing,
 } from './daw/audio';
 import { renderTrackList, highlightStep } from './daw/tracks';
 import { initPianoRoll, setPianoRollStep } from './daw/pianoroll';
@@ -155,6 +155,9 @@ masterVol.addEventListener('input', () => {
   Tone.getDestination().volume.rampTo(parseFloat(masterVol.value), 0.1);
 });
 
+const swingEl = document.getElementById('swing') as HTMLInputElement | null;
+swingEl?.addEventListener('input', () => setSwing(parseFloat(swingEl.value)));
+
 btnAutorun.addEventListener('click', () => {
   state.autoRun = !state.autoRun;
   btnAutorun.textContent = state.autoRun ? 'AUTO ●' : 'AUTO ○';
@@ -274,16 +277,16 @@ rollOctUp.addEventListener('click', () => {
 
 // ─── Sample Browser ───────────────────────────────────────────────────────────
 
+// Real banks/sounds from tidal-drum-machines (played as actual samples)
 const SAMPLE_BANKS: Record<string, Record<string, string[]>> = {
-  'DRUMS':  { 'RolandTR808':['bd','sd','hh','oh','cp','mt','lt','ht','rim','rs','cb','cy'],
-               'RolandTR909':['bd','sd','hh','oh','cp','lt','mt','ht'],
-               'AkaiMPC':    ['bd','sd','hh','oh','cp','tom1','tom2','clap'] },
-  'SYNTHS': { 'Waveform':['sawtooth','square','sine','triangle'],
-               'Analog':  ['moog'],
-               'Piano':   ['piano'],
-               'Pad':     ['pad','superpad','superpiano'] },
-  'BASS':   { 'Bass':    ['bass','bass2','bass3','808bass'] },
-  'PADS':   { 'Strings': ['strings','strings2','violin','cello'] },
+  'DRUMS':  { 'RolandTR808': ['bd','sd','hh','oh','cp','rim','cb','lt','mt','ht','cr','sh','perc'],
+               'RolandTR909': ['bd','sd','hh','oh','cp','rim','lt','mt','ht','cr','rd'],
+               'LinnDrum':    ['bd','sd','hh','oh','cp','rim','cb','lt','mt','ht','cr','sh'],
+               'AkaiMPC60':   ['bd','sd','hh','oh','cp','rim','lt','mt','ht','cr','rd','perc'],
+               'EmuSP12':     ['bd','sd','hh','oh','cp','rim','cb','lt','mt','ht','cr','rd'] },
+  'SYNTHS': { 'Waveform': ['sawtooth','square','sine','triangle'],
+               'Analog':   ['moog'],
+               'Piano':    ['piano'] },
 };
 
 let activeCat = 'DRUMS';

@@ -2,10 +2,13 @@ import * as Tone from 'tone';
 import { state } from './state';
 import { DrumTrack, MelodyTrack, ChordTrack, TrackFx, TrackMod } from './types';
 
-// ─── Master chain ─────────────────────────────────────────────────────────────
+// ─── Master chain: glue compressor → limiter (no clipping, more punch) ────────
 
-const masterGain  = new Tone.Gain(0.85).toDestination();
-const masterComp  = new Tone.Compressor(-18, 4).connect(masterGain);
+const masterLimiter = new Tone.Limiter(-1).toDestination();
+const masterGain  = new Tone.Gain(0.9).connect(masterLimiter);
+const masterComp  = new Tone.Compressor({
+  threshold: -14, ratio: 3, attack: 0.004, release: 0.18, knee: 8,
+}).connect(masterGain);
 const masterReverb = new Tone.Reverb({ decay: 1.5, wet: 0 }).connect(masterComp);
 
 // ─── Per-track FX chains ──────────────────────────────────────────────────────
@@ -53,7 +56,46 @@ export function disposeChain(id: string) {
   chains.delete(id);
 }
 
-// ─── Drum instruments ─────────────────────────────────────────────────────────
+// ─── Real drum samples (tidal-drum-machines: TR-808/909, Linn, SP-12 …) ──────
+
+const DM_JSON = 'https://raw.githubusercontent.com/felixroos/dough-samples/main/tidal-drum-machines.json';
+let drumSampleMap: Record<string, string[]> | null = null;
+let drumSampleBase = '';
+let drumSamplesLoading: Promise<void> | null = null;
+const drumPlayers = new Map<string, Tone.Player>();
+
+export function loadDrumSamples(): Promise<void> {
+  if (!drumSamplesLoading) {
+    drumSamplesLoading = fetch(DM_JSON)
+      .then(r => r.json())
+      .then(j => {
+        drumSampleBase = j._base ?? '';
+        drumSampleMap  = j;
+      })
+      .catch(e => console.warn('[audio] Drum-Samples konnten nicht geladen werden:', e));
+  }
+  return drumSamplesLoading;
+}
+
+function sampleUrlFor(bank: string, sound: string): string | null {
+  if (!drumSampleMap) return null;
+  const v = drumSampleMap[`${bank}_${sound}`];
+  if (!Array.isArray(v) || !v.length) return null;
+  const first = v[0];
+  return first.startsWith('http') ? first : drumSampleBase + first;
+}
+
+function getDrumPlayer(track: DrumTrack): Tone.Player | null {
+  const key = `${track.id}:${track.bank}_${track.sound}`;
+  if (drumPlayers.has(key)) return drumPlayers.get(key)!;
+  const url = sampleUrlFor(track.bank, track.sound);
+  if (!url) return null;
+  const p = new Tone.Player({ url, fadeOut: 0.005 }).connect(getChain(track.id).gain);
+  drumPlayers.set(key, p);
+  return p;
+}
+
+// ─── Synth drum fallback (until samples are loaded) ──────────────────────────
 
 const drumInstruments = new Map<string, Tone.MembraneSynth | Tone.NoiseSynth | Tone.MetalSynth>();
 
@@ -87,21 +129,40 @@ function getDrumInstrument(track: DrumTrack) {
 
 // ─── Melody / Chord instruments ───────────────────────────────────────────────
 
-const melodyInstruments = new Map<string, Tone.PolySynth>();
+type MelodyVoice = Tone.PolySynth | Tone.Sampler;
+const melodyInstruments = new Map<string, MelodyVoice>();
 const melodyInstrumentType = new Map<string, string>();
 
-function getMelodyInstrument(id: string, synthType: string): Tone.PolySynth {
+// Salamander grand piano (the classic Tone.js sample set)
+function makePianoSampler(): Tone.Sampler {
+  const urls: Record<string, string> = {};
+  for (let oct = 1; oct <= 7; oct++) {
+    urls[`C${oct}`]  = `C${oct}.mp3`;
+    urls[`D#${oct}`] = `Ds${oct}.mp3`;
+    urls[`F#${oct}`] = `Fs${oct}.mp3`;
+    urls[`A${oct}`]  = `A${oct}.mp3`;
+  }
+  return new Tone.Sampler({
+    urls,
+    baseUrl: 'https://tonejs.github.io/audio/salamander/',
+    release: 1.2,
+  });
+}
+
+function getMelodyInstrument(id: string, synthType: string): MelodyVoice {
   // Rebuild if the sound was switched (e.g. via sample browser)
   if (melodyInstruments.has(id) && melodyInstrumentType.get(id) !== synthType) {
     melodyInstruments.get(id)!.dispose();
     melodyInstruments.delete(id);
   }
   if (!melodyInstruments.has(id)) {
-    let poly: Tone.PolySynth;
-    if (synthType === 'moog') {
+    let voice: MelodyVoice;
+    if (synthType === 'piano') {
+      voice = makePianoSampler();
+    } else if (synthType === 'moog') {
       // Minimoog-like voice: saw osc into 24dB ladder-style lowpass w/ contour
-      poly = new Tone.PolySynth(Tone.MonoSynth, {
-        oscillator: { type: 'sawtooth' },
+      voice = new Tone.PolySynth(Tone.MonoSynth, {
+        oscillator: { type: 'fatsawtooth', count: 2, spread: 12 },
         filter: { type: 'lowpass', rolloff: -24, Q: 5 },
         envelope: { attack: 0.005, decay: 0.3, sustain: 0.8, release: 0.35 },
         filterEnvelope: {
@@ -110,18 +171,23 @@ function getMelodyInstrument(id: string, synthType: string): Tone.PolySynth {
         },
       } as any);
     } else {
+      // Fat detuned unison oscillators — full, wide, professional
       const typeMap: Record<string, any> = {
-        sawtooth: { oscillator: { type: 'sawtooth' }, envelope: { attack: 0.01, decay: 0.3, sustain: 0.4, release: 0.5 } },
-        square:   { oscillator: { type: 'square'   }, envelope: { attack: 0.01, decay: 0.2, sustain: 0.3, release: 0.4 } },
-        sine:     { oscillator: { type: 'sine'     }, envelope: { attack: 0.02, decay: 0.5, sustain: 0.5, release: 0.8 } },
-        triangle: { oscillator: { type: 'triangle' }, envelope: { attack: 0.02, decay: 0.4, sustain: 0.5, release: 0.6 } },
-        piano:    { oscillator: { type: 'triangle' }, envelope: { attack: 0.005, decay: 0.8, sustain: 0.2, release: 1.2 } },
+        sawtooth: { oscillator: { type: 'fatsawtooth', count: 3, spread: 24 },
+                    envelope: { attack: 0.012, decay: 0.35, sustain: 0.45, release: 0.6 } },
+        square:   { oscillator: { type: 'fatsquare', count: 2, spread: 14 },
+                    envelope: { attack: 0.01, decay: 0.25, sustain: 0.35, release: 0.45 } },
+        sine:     { oscillator: { type: 'sine' },
+                    envelope: { attack: 0.02, decay: 0.5, sustain: 0.5, release: 0.9 } },
+        triangle: { oscillator: { type: 'fattriangle', count: 2, spread: 10 },
+                    envelope: { attack: 0.02, decay: 0.4, sustain: 0.5, release: 0.7 } },
       };
       const opts = typeMap[synthType] ?? typeMap['sawtooth'];
-      poly = new Tone.PolySynth(Tone.Synth, opts);
+      voice = new Tone.PolySynth(Tone.Synth, opts);
+      (voice as Tone.PolySynth).volume.value = -4; // headroom for unison stacks
     }
-    poly.connect(getChain(id).gain);
-    melodyInstruments.set(id, poly);
+    voice.connect(getChain(id).gain);
+    melodyInstruments.set(id, voice);
     melodyInstrumentType.set(id, synthType);
   }
   return melodyInstruments.get(id)!;
@@ -139,26 +205,39 @@ export function onStep(cb: (trackId: string, step: number) => void) {
 let currentStep = 0;
 
 function buildDrumSequence(track: DrumTrack): Tone.Sequence {
-  const instr = getDrumInstrument(track);
   return new Tone.Sequence((time, step) => {
-    currentStep = step as number;
-    stepCallback?.(track.id, step as number);
-    if (track.muted) return;
-    if (track.steps[step as number]) {
-      if (instr instanceof Tone.MembraneSynth) instr.triggerAttackRelease('C1', '16n', time);
-      else if (instr instanceof Tone.NoiseSynth) instr.triggerAttackRelease('16n', time);
-      else (instr as Tone.MetalSynth).triggerAttackRelease('16n', time);
+    const s = step as number;
+    currentStep = s;
+    stepCallback?.(track.id, s);
+    if (track.muted || !track.steps[s]) return;
+
+    // Real sample if loaded, otherwise synth fallback
+    const player = getDrumPlayer(track);
+    if (player?.loaded) {
+      // Humanize: downbeats full, offbeats slightly softer + tiny variation
+      const accent = s % 4 === 0 ? 0 : -2.5;
+      player.volume.setValueAtTime(accent - Math.random() * 1.5, time);
+      player.start(time);
+      return;
     }
+    const instr = getDrumInstrument(track);
+    if (instr instanceof Tone.MembraneSynth) instr.triggerAttackRelease('C1', '16n', time);
+    else if (instr instanceof Tone.NoiseSynth) instr.triggerAttackRelease('16n', time);
+    else (instr as Tone.MetalSynth).triggerAttackRelease('16n', time);
   }, [...Array(track.steps.length).keys()], '16n');
+}
+
+function voiceReady(instr: MelodyVoice): boolean {
+  return !(instr instanceof Tone.Sampler) || instr.loaded;
 }
 
 function buildMelodySequence(track: MelodyTrack): Tone.Sequence {
   const instr = getMelodyInstrument(track.id, track.synth);
   return new Tone.Sequence((time, step) => {
     stepCallback?.(track.id, step as number);
-    if (track.muted) return;
+    if (track.muted || !voiceReady(instr)) return;
     const note = track.steps[step as number];
-    if (note) instr.triggerAttackRelease(note, '8n', time);
+    if (note) instr.triggerAttackRelease(note, '8n', time, 0.75 + Math.random() * 0.25);
   }, [...Array(track.steps.length).keys()], '16n');
 }
 
@@ -167,9 +246,9 @@ function buildChordSequence(track: ChordTrack): Tone.Sequence {
   const len   = track.chords.length;
   return new Tone.Sequence((time, step) => {
     stepCallback?.(track.id, step as number);
-    if (track.muted) return;
+    if (track.muted || !voiceReady(instr)) return;
     const chord = track.chords[(step as number) % len];
-    if (chord?.length) instr.triggerAttackRelease(chord, '4n', time);
+    if (chord?.length) instr.triggerAttackRelease(chord, '2n', time, 0.7);
   }, [...Array(len).keys()], '1n');
 }
 
@@ -238,9 +317,17 @@ export function getCurrentStep() {
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
+export function setSwing(amount: number) {
+  Tone.getTransport().swing = amount;
+}
+
 export function initAudio() {
-  Tone.getTransport().bpm.value = state.bpm;
-  Tone.getTransport().loop     = true;
-  Tone.getTransport().loopStart = 0;
-  Tone.getTransport().loopEnd  = '1m';
+  const t = Tone.getTransport();
+  t.bpm.value = state.bpm;
+  t.loop      = true;
+  t.loopStart = 0;
+  t.loopEnd   = '1m';
+  t.swing            = 0.08;   // subtle groove by default
+  t.swingSubdivision = '16n';
+  loadDrumSamples();           // fetch real 808/909 hits right away
 }

@@ -77,10 +77,14 @@ function sparsePattern(len: number, p = 0.14): boolean[] {
   return Array.from({ length: len }, () => chance(p));
 }
 
+const DRUM_BANKS = ['RolandTR808', 'RolandTR909', 'LinnDrum', 'AkaiMPC60', 'EmuSP12'];
+
 function randomizeDrums() {
+  const bank = pick(DRUM_BANKS); // one machine for the whole kit = coherent sound
   state.tracks.forEach(t => {
     if (t.type !== 'drum') return;
     const d = t as DrumTrack;
+    d.bank = bank;
     const len = d.steps.length;
     if (d.sound === 'bd')                       d.steps = kickPattern(len);
     else if (d.sound === 'sd' || d.sound === 'cp') d.steps = snarePattern(len);
