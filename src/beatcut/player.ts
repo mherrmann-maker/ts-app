@@ -48,7 +48,10 @@ export class Player {
   }
 
   async start(record: boolean): Promise<void> {
-    const ctx = new AudioContext()
+    const AC =
+      window.AudioContext ??
+      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
+    const ctx = new AC()
     this.audioCtx = ctx
     await ctx.resume()
 
@@ -60,8 +63,15 @@ export class Player {
     if (record) {
       const dest = ctx.createMediaStreamDestination()
       source.connect(dest)
+      let canvasStream: MediaStream
+      try {
+        canvasStream = this.canvas.captureStream(this.opts.fps)
+      } catch {
+        // Safari akzeptiert teils keinen fps-Parameter
+        canvasStream = this.canvas.captureStream()
+      }
       const stream = new MediaStream([
-        ...this.canvas.captureStream(this.opts.fps).getVideoTracks(),
+        ...canvasStream.getVideoTracks(),
         ...dest.stream.getAudioTracks(),
       ])
       const mimeType = pickMimeType()
@@ -182,6 +192,7 @@ export class Player {
     const p = Math.min(1, Math.max(0, (t - seg.start) / Math.max(0.001, seg.end - seg.start)))
     const m = seg.media
     const el = m.el
+    const beat = this.lastBeat(t)
 
     let zoom = 1
     let panX = 0
@@ -191,6 +202,10 @@ export class Player {
       zoom = seg.kb.z0 + (seg.kb.z1 - seg.kb.z0) * e
       panX = seg.kb.x0 + (seg.kb.x1 - seg.kb.x0) * e
       panY = seg.kb.y0 + (seg.kb.y1 - seg.kb.y0) * e
+    }
+    if (this.opts.flash && beat) {
+      // Dezenter Zoom-Puls auf jedem Beat
+      zoom *= 1 + beat.strength * 0.025 * Math.exp(-beat.dt * 8)
     }
 
     const baseScale = Math.max(cw / m.width, ch / m.height)
@@ -207,21 +222,25 @@ export class Player {
       // Frame noch nicht dekodiert – letztes Bild bleibt schwarz
     }
 
-    if (this.opts.flash) this.drawFlash(t, cw, ch)
+    if (this.opts.flash && beat) {
+      const alpha = beat.strength * Math.exp(-beat.dt * 10) * 0.22
+      if (alpha > 0.005) {
+        ctx.fillStyle = `rgba(255, 255, 255, ${alpha.toFixed(3)})`
+        ctx.fillRect(0, 0, cw, ch)
+      }
+    }
   }
 
-  private drawFlash(t: number, cw: number, ch: number): void {
+  /** Letzter Beat vor Zeitpunkt t (sequenzieller Zeiger). */
+  private lastBeat(t: number): { dt: number; strength: number } | null {
     const beats = this.analysis.beats
     while (this.beatIndex + 1 < beats.length && beats[this.beatIndex + 1] <= t) {
       this.beatIndex++
     }
-    if (this.beatIndex < 0) return
-    const dt = t - beats[this.beatIndex]
-    const strength = this.analysis.beatStrength[this.beatIndex] ?? 0
-    const alpha = strength * Math.exp(-dt * 10) * 0.22
-    if (alpha > 0.005) {
-      this.ctx2d.fillStyle = `rgba(255, 255, 255, ${alpha.toFixed(3)})`
-      this.ctx2d.fillRect(0, 0, cw, ch)
+    if (this.beatIndex < 0) return null
+    return {
+      dt: t - beats[this.beatIndex],
+      strength: this.analysis.beatStrength[this.beatIndex] ?? 0,
     }
   }
 }
@@ -235,6 +254,9 @@ function pickMimeType(): string {
     'video/webm;codecs=vp9,opus',
     'video/webm;codecs=vp8,opus',
     'video/webm',
+    // iOS/macOS Safari nimmt kein WebM auf, aber MP4/H.264
+    'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
+    'video/mp4',
   ]
   for (const c of candidates) {
     if (MediaRecorder.isTypeSupported(c)) return c
