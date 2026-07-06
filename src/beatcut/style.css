@@ -101,6 +101,12 @@ button {
   max-width: 460px;
 }
 
+.bc-btn-demo {
+  margin-top: 26px;
+  border-color: var(--gold-30);
+  color: var(--gold);
+}
+
 /* ============ CARDS ============ */
 .bc-cards {
   display: grid;

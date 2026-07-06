@@ -30,6 +30,7 @@ const stageWrap = $<HTMLDivElement>('#stage-wrap')
 const segBeats = $<HTMLDivElement>('#seg-beats')
 const segRes = $<HTMLDivElement>('#seg-res')
 const flashCheck = $<HTMLInputElement>('#flash')
+const btnDemo = $<HTMLButtonElement>('#btn-demo')
 const btnPreview = $<HTMLButtonElement>('#btn-preview')
 const btnExport = $<HTMLButtonElement>('#btn-export')
 const btnStop = $<HTMLButtonElement>('#btn-stop')
@@ -75,6 +76,7 @@ function updateButtons(): void {
   btnPreview.disabled = !ready
   btnExport.disabled = !ready
   btnStop.disabled = player === null
+  btnDemo.disabled = player !== null
   for (const input of [audioInput, imageInput, videoInput, imageDirInput, videoDirInput]) {
     input.disabled = player !== null
   }
@@ -321,6 +323,57 @@ function run(record: boolean): void {
     updateButtons()
   })
 }
+
+/* ---------- Demo-Footage ---------- */
+
+// Clips liegen als H.264/MP4 (iOS/Safari) und VP9/WebM bereit – je nach Browser
+const demoClipFormat = document
+  .createElement('video')
+  .canPlayType('video/mp4; codecs="avc1.42E01E"')
+  ? { ext: 'mp4', type: 'video/mp4' }
+  : { ext: 'webm', type: 'video/webm' }
+
+const DEMO = {
+  audio: { url: 'demo/beat.mp3', name: 'demo-beat.mp3', type: 'audio/mpeg' },
+  images: [1, 2, 3, 4, 5, 6].map((i) => ({
+    url: `demo/img-${i}.jpg`,
+    name: `demo-img-${i}.jpg`,
+    type: 'image/jpeg',
+  })),
+  videos: ['waves', 'plasma', 'bokeh'].map((n) => ({
+    url: `demo/clip-${n}.${demoClipFormat.ext}`,
+    name: `demo-clip-${n}.${demoClipFormat.ext}`,
+    type: demoClipFormat.type,
+  })),
+}
+
+async function fetchAsFile(spec: { url: string; name: string; type: string }): Promise<File> {
+  const res = await fetch(spec.url)
+  if (!res.ok) throw new Error(`${spec.url}: HTTP ${res.status}`)
+  return new File([await res.blob()], spec.name, { type: spec.type })
+}
+
+btnDemo.addEventListener('click', () => {
+  void (async () => {
+    btnDemo.disabled = true
+    btnDemo.textContent = '✦  DEMO-FOOTAGE LÄDT …'
+    setStatus('Lade Demo-Footage (Musik, 6 Bilder, 3 Clips) …')
+    try {
+      const [audioFile, imageFiles, videoFiles] = await Promise.all([
+        fetchAsFile(DEMO.audio),
+        Promise.all(DEMO.images.map(fetchAsFile)),
+        Promise.all(DEMO.videos.map(fetchAsFile)),
+      ])
+      handleImages(imageFiles)
+      handleVideos(videoFiles)
+      handleAudio([audioFile])
+    } catch (err) {
+      setStatus(`Demo konnte nicht geladen werden: ${err instanceof Error ? err.message : err}`)
+    }
+    btnDemo.textContent = '✦  MIT DEMO-FOOTAGE AUSPROBIEREN'
+    btnDemo.disabled = player !== null
+  })()
+})
 
 btnPreview.addEventListener('click', () => run(false))
 btnExport.addEventListener('click', () => {

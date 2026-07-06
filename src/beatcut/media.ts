@@ -48,11 +48,7 @@ function loadVideo(file: File): Promise<VideoItem | null> {
     el.playsInline = true
     el.loop = true
     el.preload = 'auto'
-    el.onloadedmetadata = () => {
-      if (!el.videoWidth || !isFinite(el.duration)) {
-        resolve(null)
-        return
-      }
+    const finish = () => {
       resolve({
         kind: 'video',
         name: file.name,
@@ -61,6 +57,24 @@ function loadVideo(file: File): Promise<VideoItem | null> {
         height: el.videoHeight,
         duration: el.duration,
       })
+    }
+    el.onloadedmetadata = () => {
+      if (!el.videoWidth) {
+        resolve(null)
+        return
+      }
+      if (isFinite(el.duration)) {
+        finish()
+        return
+      }
+      // MediaRecorder-WebM meldet Infinity – Seek ans Ende macht die Dauer bekannt
+      el.onseeked = () => {
+        el.onseeked = null
+        el.currentTime = 0
+        if (isFinite(el.duration)) finish()
+        else resolve(null)
+      }
+      el.currentTime = 1e7
     }
     el.onerror = () => resolve(null)
     el.src = URL.createObjectURL(file)

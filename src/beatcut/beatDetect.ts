@@ -13,7 +13,9 @@ export interface BeatAnalysis {
 }
 
 const FRAME = 1024
-const HOP = 512
+// Kleiner Hop = feine Zeitauflösung der Hüllkurve; wichtig, damit Beat-Perioden
+// nicht zwischen zwei Integer-Lags der Autokorrelation fallen.
+const HOP = 256
 
 export function analyzeBeats(buffer: AudioBuffer): BeatAnalysis {
   let samples = mixdown(buffer)
@@ -150,8 +152,9 @@ function estimateTempo(env: Float32Array, envRate: number): number {
   const maxLag = Math.min(env.length - 1, Math.ceil((envRate * 60) / 60))
   if (maxLag <= minLag) return 120
 
-  const corr = new Float64Array(maxLag + 2)
-  for (let lag = minLag; lag <= maxLag + 1 && lag < env.length; lag++) {
+  const corrMax = Math.min(env.length - 1, 2 * maxLag + 2)
+  const corr = new Float64Array(corrMax + 1)
+  for (let lag = minLag; lag <= corrMax; lag++) {
     let sum = 0
     for (let i = 0; i + lag < env.length; i++) sum += env[i] * env[i + lag]
     corr[lag] = sum
@@ -161,15 +164,27 @@ function estimateTempo(env: Float32Array, envRate: number): number {
   let bestLag = minLag
   for (let lag = minLag; lag <= maxLag; lag++) {
     const bpm = (60 * envRate) / lag
-    // Präferenz für musikalisch übliche Tempi um 120 BPM
+    // Präferenz für musikalisch übliche Tempi um 120 BPM; harmonisches Scoring:
+    // das echte Beat-Tempo wird durch seine Oktave (doppelter Lag) mitgestützt,
+    // sonst gewinnen Half-Time-Elemente wie Claps auf 2 und 4.
+    const octave = 2 * lag <= corrMax ? corr[2 * lag] : 0
     const weight = Math.exp(-0.5 * Math.pow(Math.log2(bpm / 120) / 0.9, 2))
-    const score = corr[lag] * weight
+    const score = (corr[lag] + 0.5 * octave) * weight
     if (score > bestScore) {
       bestScore = score
       bestLag = lag
     }
   }
   if (!isFinite(bestScore) || bestScore <= 0) return 120
+
+  // Oktav-Korrektur: Wenn das doppelte Tempo (halber Lag) fast genauso stark
+  // korreliert, ist es meist das eigentliche Beat-Tempo (Kick auf jedem Beat).
+  while (true) {
+    const half = Math.round(bestLag / 2)
+    if (half < minLag || half > corrMax) break
+    if (corr[half] > 0.65 * corr[bestLag]) bestLag = half
+    else break
+  }
 
   // Parabolische Interpolation um den Peak für sub-frame-genaues Tempo
   let refined = bestLag
