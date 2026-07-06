@@ -112,6 +112,7 @@ uniform float uBands;
 uniform float uSize;
 attribute float aRnd;
 varying float vShade;
+varying float vDepth;
 
 float hash1(float n) { return fract(sin(n) * 43758.5453123); }
 float hash3(vec3 p) {
@@ -159,6 +160,7 @@ void main() {
 
   vec4 mv = modelViewMatrix * vec4(p, 1.0);
   gl_PointSize = max(uSize * (10.0 / -mv.z) * (0.45 + aRnd * 0.85), 1.0);
+  vDepth = -mv.z;
   gl_Position = projectionMatrix * mv;
 }
 `;
@@ -166,11 +168,16 @@ void main() {
 const CLOUD_FRAG = /* glsl */ `
 uniform vec3 uColor;
 uniform float uOpacity;
+uniform vec3 uFogColor;
+uniform float uFogDensity;
 varying float vShade;
+varying float vDepth;
 void main() {
   vec2 d = gl_PointCoord - 0.5;
   if (dot(d, d) > 0.25) discard;
-  gl_FragColor = vec4(uColor * vShade, uOpacity);
+  float fogF = 1.0 - exp(-uFogDensity * uFogDensity * vDepth * vDepth);
+  vec3 c = mix(uColor * vShade, uFogColor, clamp(fogF, 0.0, 1.0));
+  gl_FragColor = vec4(c, uOpacity);
 }
 `;
 
@@ -205,6 +212,8 @@ function makeCloudPoints(kind: ObjectKind): THREE.Points {
       uSize: { value: 1.2 },
       uColor: { value: new THREE.Color(0xffffff) },
       uOpacity: { value: 0.95 },
+      uFogColor: { value: new THREE.Color(0x000000) },
+      uFogDensity: { value: 0 },
     },
   });
   const points = new THREE.Points(geo, mat);
@@ -380,6 +389,14 @@ export class ClipObject {
   setCloudTime(t: number): void {
     const u = this.cloudUniforms();
     if (u) u.uTime.value = t;
+  }
+
+  /** Mirror the scene fog into the cloud shader (no-op for other kinds). */
+  setFog(colorHex: string, density: number): void {
+    const u = this.cloudUniforms();
+    if (!u) return;
+    (u.uFogColor.value as THREE.Color).set(colorHex);
+    u.uFogDensity.value = density;
   }
 
   captureState(): AnimState {
