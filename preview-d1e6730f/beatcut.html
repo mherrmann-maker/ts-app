@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#020205" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>BEATCUT — VON KOENIGSWEG IMMERSIVE</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Space+Grotesk:wght@300;400;500&display=swap"
+      rel="stylesheet"
+    />
+    <script type="module" crossorigin src="./assets/beatcut-CSPp9pCo.js"></script>
+    <link rel="modulepreload" crossorigin href="./assets/modulepreload-polyfill-B5Qt9EMX.js">
+    <link rel="stylesheet" crossorigin href="./assets/beatcut-Dg2Pj8Ll.css">
+  </head>
+  <body>
+    <nav class="bc-nav">
+      <a href="./index.html" class="bc-logo">VK IMMERSIVE</a>
+      <span class="bc-nav-label">BEATCUT</span>
+    </nav>
+
+    <main id="app">
+      <header class="bc-hero">
+        <span class="label">AUDIO-REACTIVE VIDEO EDITOR</span>
+        <h1 class="bc-title">BEATCUT</h1>
+        <p class="bc-sub">
+          Musik hochladen, Bilder &amp; Clips wählen — BeatCut erkennt die Rhythmik und schneidet
+          dein Video exakt auf den Beat. Komplett lokal, nichts verlässt dein Gerät.
+        </p>
+        <button id="btn-demo" class="bc-btn bc-btn-demo" type="button">
+          ✦&nbsp; MIT DEMO-FOOTAGE AUSPROBIEREN
+        </button>
+      </header>
+
+      <section class="bc-cards">
+        <div class="bc-card" id="card-audio">
+          <div class="bc-card-head">
+            <span class="bc-card-num">01</span>
+            <span class="bc-card-check">✓</span>
+          </div>
+          <h2 class="bc-card-title">MUSIK</h2>
+          <p class="bc-card-hint">Song antippen &amp; hochladen — MP3, WAV, M4A …</p>
+          <div class="bc-card-info" id="audio-info">Noch keine Musik geladen</div>
+          <input type="file" id="audio-input" accept="audio/*" hidden />
+        </div>
+
+        <div class="bc-card" id="card-images">
+          <div class="bc-card-head">
+            <span class="bc-card-num">02</span>
+            <span class="bc-card-check">✓</span>
+          </div>
+          <h2 class="bc-card-title">BILDER</h2>
+          <p class="bc-card-hint">Mehrere Bilder auswählen — oder hierher ziehen</p>
+          <div class="bc-card-info" id="image-info">Noch keine Bilder geladen</div>
+          <button class="bc-dir-btn" id="image-dir-btn" type="button">GANZEN ORDNER WÄHLEN</button>
+          <input type="file" id="image-input" accept="image/*" multiple hidden />
+          <input type="file" id="image-dir-input" webkitdirectory multiple hidden />
+        </div>
+
+        <div class="bc-card" id="card-videos">
+          <div class="bc-card-head">
+            <span class="bc-card-num">03</span>
+            <span class="bc-card-check">✓</span>
+          </div>
+          <h2 class="bc-card-title">CLIPS</h2>
+          <p class="bc-card-hint">Mehrere Videoclips auswählen — oder hierher ziehen</p>
+          <div class="bc-card-info" id="video-info">Noch keine Clips geladen</div>
+          <button class="bc-dir-btn" id="video-dir-btn" type="button">GANZEN ORDNER WÄHLEN</button>
+          <input type="file" id="video-input" accept="video/*" multiple hidden />
+          <input type="file" id="video-dir-input" webkitdirectory multiple hidden />
+        </div>
+      </section>
+
+      <section class="bc-section">
+        <span class="label">TIMELINE</span>
+        <div class="bc-wave-wrap">
+          <canvas id="wave"></canvas>
+          <span class="bc-wave-empty" id="wave-empty">BEATS ERSCHEINEN HIER NACH DER ANALYSE</span>
+        </div>
+      </section>
+
+      <section class="bc-section bc-settings">
+        <div class="bc-setting">
+          <span class="label">SCHNITT ALLE</span>
+          <div class="bc-seg" id="seg-beats">
+            <button type="button" data-v="1">1</button>
+            <button type="button" data-v="2" class="active">2</button>
+            <button type="button" data-v="4">4</button>
+            <button type="button" data-v="8">8</button>
+          </div>
+          <span class="bc-setting-unit">BEATS</span>
+        </div>
+        <div class="bc-setting">
+          <span class="label">FORMAT</span>
+          <div class="bc-seg" id="seg-res">
+            <button type="button" data-v="1920x1080">16:9 · FHD</button>
+            <button type="button" data-v="1280x720">16:9 · HD</button>
+            <button type="button" data-v="1080x1920">9:16 · REELS</button>
+          </div>
+        </div>
+        <div class="bc-setting">
+          <span class="label">BEAT-EFFEKTE</span>
+          <label class="bc-toggle">
+            <input type="checkbox" id="flash" checked />
+            <span class="bc-toggle-track"><span class="bc-toggle-dot"></span></span>
+            <span class="bc-toggle-text">PULS &amp; BLITZ</span>
+          </label>
+        </div>
+      </section>
+
+      <section class="bc-section bc-actions">
+        <button id="btn-preview" class="bc-btn" disabled>▶&nbsp; VORSCHAU</button>
+        <button id="btn-export" class="bc-btn bc-btn-primary" disabled>⬇&nbsp; VIDEO EXPORTIEREN</button>
+        <button id="btn-stop" class="bc-btn" disabled>■&nbsp; STOPP</button>
+        <div class="bc-progress"><div class="bc-progress-fill" id="progress-fill"></div></div>
+        <div id="status">Musik sowie Bilder oder Clips auswählen, um zu starten.</div>
+      </section>
+
+      <section class="bc-stage-wrap" id="stage-wrap">
+        <canvas id="stage" width="1920" height="1080"></canvas>
+      </section>
+
+      <footer class="bc-footer">
+        <span>VON KOENIGSWEG IMMERSIVE</span>
+        <span>BEATCUT · LÄUFT 100&nbsp;% IM BROWSER</span>
+      </footer>
+    </main>
+
+  </body>
+</html>
