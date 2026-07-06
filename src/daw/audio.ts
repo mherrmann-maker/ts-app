@@ -88,20 +88,41 @@ function getDrumInstrument(track: DrumTrack) {
 // ─── Melody / Chord instruments ───────────────────────────────────────────────
 
 const melodyInstruments = new Map<string, Tone.PolySynth>();
+const melodyInstrumentType = new Map<string, string>();
 
 function getMelodyInstrument(id: string, synthType: string): Tone.PolySynth {
+  // Rebuild if the sound was switched (e.g. via sample browser)
+  if (melodyInstruments.has(id) && melodyInstrumentType.get(id) !== synthType) {
+    melodyInstruments.get(id)!.dispose();
+    melodyInstruments.delete(id);
+  }
   if (!melodyInstruments.has(id)) {
-    const typeMap: Record<string, any> = {
-      sawtooth: { oscillator: { type: 'sawtooth' }, envelope: { attack: 0.01, decay: 0.3, sustain: 0.4, release: 0.5 } },
-      square:   { oscillator: { type: 'square'   }, envelope: { attack: 0.01, decay: 0.2, sustain: 0.3, release: 0.4 } },
-      sine:     { oscillator: { type: 'sine'     }, envelope: { attack: 0.02, decay: 0.5, sustain: 0.5, release: 0.8 } },
-      triangle: { oscillator: { type: 'triangle' }, envelope: { attack: 0.02, decay: 0.4, sustain: 0.5, release: 0.6 } },
-      piano:    { oscillator: { type: 'triangle' }, envelope: { attack: 0.005, decay: 0.8, sustain: 0.2, release: 1.2 } },
-    };
-    const opts = typeMap[synthType] ?? typeMap['sawtooth'];
-    const poly = new Tone.PolySynth(Tone.Synth, opts);
+    let poly: Tone.PolySynth;
+    if (synthType === 'moog') {
+      // Minimoog-like voice: saw osc into 24dB ladder-style lowpass w/ contour
+      poly = new Tone.PolySynth(Tone.MonoSynth, {
+        oscillator: { type: 'sawtooth' },
+        filter: { type: 'lowpass', rolloff: -24, Q: 5 },
+        envelope: { attack: 0.005, decay: 0.3, sustain: 0.8, release: 0.35 },
+        filterEnvelope: {
+          attack: 0.005, decay: 0.45, sustain: 0.3, release: 0.3,
+          baseFrequency: 900, octaves: 3.2,
+        },
+      } as any);
+    } else {
+      const typeMap: Record<string, any> = {
+        sawtooth: { oscillator: { type: 'sawtooth' }, envelope: { attack: 0.01, decay: 0.3, sustain: 0.4, release: 0.5 } },
+        square:   { oscillator: { type: 'square'   }, envelope: { attack: 0.01, decay: 0.2, sustain: 0.3, release: 0.4 } },
+        sine:     { oscillator: { type: 'sine'     }, envelope: { attack: 0.02, decay: 0.5, sustain: 0.5, release: 0.8 } },
+        triangle: { oscillator: { type: 'triangle' }, envelope: { attack: 0.02, decay: 0.4, sustain: 0.5, release: 0.6 } },
+        piano:    { oscillator: { type: 'triangle' }, envelope: { attack: 0.005, decay: 0.8, sustain: 0.2, release: 1.2 } },
+      };
+      const opts = typeMap[synthType] ?? typeMap['sawtooth'];
+      poly = new Tone.PolySynth(Tone.Synth, opts);
+    }
     poly.connect(getChain(id).gain);
     melodyInstruments.set(id, poly);
+    melodyInstrumentType.set(id, synthType);
   }
   return melodyInstruments.get(id)!;
 }

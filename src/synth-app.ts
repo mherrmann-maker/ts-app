@@ -11,6 +11,7 @@ import { getScaleNotes, getChordForDegree } from './daw/scales';
 import { generateCode } from './daw/codegen';
 import { initEditor, updateEditorCode, getEditorCode } from './daw/editor';
 import { playStrudel, stopStrudel, warmupStrudel, onStrudelError } from './daw/strudel-engine';
+import { initMoog } from './daw/moog';
 import { MelodyTrack, ChordTrack, DrumTrack } from './daw/types';
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
@@ -195,6 +196,7 @@ document.querySelectorAll('.tab').forEach(tab => {
     if (name === 'roll')    updatePianoRoll();
     if (name === 'scales')  renderScalePanel();
     if (name === 'browser') renderBrowser();
+    if (name === 'moog')    initMoog(document.getElementById('moog-root')!);
   });
 });
 
@@ -258,6 +260,7 @@ const SAMPLE_BANKS: Record<string, Record<string, string[]>> = {
                'RolandTR909':['bd','sd','hh','oh','cp','lt','mt','ht'],
                'AkaiMPC':    ['bd','sd','hh','oh','cp','tom1','tom2','clap'] },
   'SYNTHS': { 'Waveform':['sawtooth','square','sine','triangle'],
+               'Analog':  ['moog'],
                'Piano':   ['piano'],
                'Pad':     ['pad','superpad','superpiano'] },
   'BASS':   { 'Bass':    ['bass','bass2','bass3','808bass'] },
