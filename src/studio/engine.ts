@@ -148,6 +148,9 @@ export class Engine {
   key: THREE.DirectionalLight;
   hemi: THREE.HemisphereLight;
   fog: THREE.FogExp2;
+  /** Hooks um composer.render(): z. B. Kamera-Shake anlegen/zurücknehmen. */
+  preRender?: () => void;
+  postRender?: () => void;
 
   private wrap: HTMLElement;
 
@@ -255,7 +258,9 @@ export class Engine {
   }
 
   render(): void {
-    this.controls.update();
+    if (this.controls.enabled) this.controls.update();
+    this.preRender?.();
     this.composer.render();
+    this.postRender?.();
   }
 }

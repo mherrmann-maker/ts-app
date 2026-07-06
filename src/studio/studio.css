@@ -196,6 +196,25 @@ body.left-open #backdrop, body.right-open #backdrop { display: block; }
 #props .btn-row { display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap; }
 #props .btn-row button { flex: 1; white-space: nowrap; }
 #props .danger { color: #ff6470; }
+
+.pal-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 5px;
+  margin-bottom: 8px;
+}
+.pal-chip {
+  display: flex;
+  gap: 2px;
+  padding: 5px;
+  justify-content: center;
+}
+.pal-chip span {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex: 0 0 auto;
+}
 #props .empty-note { color: var(--muted); font-size: 12px; line-height: 1.5; }
 
 /* ---------- Timeline ---------- */

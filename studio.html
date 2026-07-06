@@ -18,6 +18,7 @@
       <button id="btn-save" title="Projekt speichern (.json)">Speichern</button>
       <button id="btn-rnd-look" title="Zufälligen Look würfeln: Farben, Glitch, Verzerrung, Nebel, Licht …">🎲 Look</button>
       <button id="btn-rnd-scene" title="Komplette Zufallsszene mit Animationen und Kamerafahrt generieren">🎲 Chaos</button>
+      <button id="btn-rnd-cam" title="Zufällige Kamerafahrt für die aktuelle Szene">🎲 Kamera</button>
       <input type="file" id="file-load" accept="application/json" hidden />
     </div>
     <div class="topbar-spacer"></div>
@@ -42,6 +43,9 @@
           <button data-add="cloudKnot">✸ Knoten</button>
           <button data-add="cloudTorus">✸ Torus</button>
           <button data-add="cloudWave">≈ Welle</button>
+          <button data-add="cloudBlob">✸ Klumpen</button>
+          <button data-add="cloudGalaxy">✹ Galaxie</button>
+          <button data-add="cloudNet">⌗ Netz</button>
         </div>
         <h3>Objekte · 3D</h3>
         <div class="obj-grid">
@@ -66,7 +70,9 @@
         <div class="obj-grid">
           <button data-add="particles">✳ Partikel</button>
           <button data-add="pointLight">☀ Licht</button>
+          <button id="btn-add-media" title="Eigenes Bild oder Video einmischen">🖼 Bild/Video</button>
         </div>
+        <input type="file" id="file-media" accept="image/*,video/*" hidden />
       </section>
       <section class="panel grow">
         <h3>Szene</h3>
