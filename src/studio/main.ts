@@ -33,6 +33,7 @@ interface SceneSettings {
   keyColor: string;
   keyIntensity: number;
   hemi: number;
+  shake: number;
   showGrid: boolean;
   showGround: boolean;
   duration: number;
@@ -53,6 +54,7 @@ const DEFAULT_SETTINGS: SceneSettings = {
   tint: 0, tintA: '#0e2a38', tintB: '#ff9a3c',
   fog: 0.035, fogColor: '#000000',
   keyColor: '#ffffff', keyIntensity: 1.6, hemi: 0.5,
+  shake: 0,
   showGrid: false, showGround: false,
   duration: 8, fps: 60,
 };
@@ -70,6 +72,8 @@ let looping = true;
 let autoKey = true;
 let defaultEasing: EasingName = 'easeInOut';
 let exporting = false;
+let paletteRecolor = true;
+let mediaTarget: ClipObject | null = null;
 
 // ---------------------------------------------------------------- dom
 
@@ -86,6 +90,7 @@ const sceneListEl = $('scene-list');
 const timeDisplay = $('time-display');
 const playBtn = $<HTMLButtonElement>('btn-play');
 const easingSelect = $<HTMLSelectElement>('easing-select');
+const mediaInput = $<HTMLInputElement>('file-media');
 
 const engine = new Engine(canvas, viewport);
 
@@ -158,6 +163,9 @@ function refreshTimeline(): void {
 function setTime(t: number): void {
   time = Math.min(Math.max(t, 0), settings.duration);
   applyTime(time);
+  if (!playing && !exporting) {
+    for (const obj of objects) obj.syncVideo(time);
+  }
 }
 
 function applyTime(t: number): void {
@@ -178,7 +186,30 @@ function setPlaying(p: boolean): void {
   playing = p;
   playBtn.textContent = p ? '⏸' : '▶';
   if (p && time >= settings.duration) time = 0;
+  for (const obj of objects) obj.setVideoPlaying(p);
 }
+
+// Handkamera-Wackeln: nur bei Playback/Export, deterministisch über die
+// Timeline-Zeit; Offset wird nach dem Rendern zurückgenommen, damit
+// OrbitControls nicht driften.
+const shakeSaved = new THREE.Vector3();
+let shakeApplied = false;
+engine.preRender = () => {
+  if (!(playing || exporting) || settings.shake <= 0) return;
+  shakeSaved.copy(engine.camera.position);
+  const s = settings.shake;
+  const w = (f: number, ph: number) =>
+    Math.sin(time * f + ph) + 0.55 * Math.sin(time * f * 2.63 + ph * 1.7);
+  engine.camera.position.x += w(1.9, 1.0) * 0.035 * s;
+  engine.camera.position.y += w(2.4, 4.2) * 0.028 * s;
+  engine.camera.position.z += w(1.5, 8.9) * 0.02 * s;
+  shakeApplied = true;
+};
+engine.postRender = () => {
+  if (!shakeApplied) return;
+  engine.camera.position.copy(shakeSaved);
+  shakeApplied = false;
+};
 
 let lastFrame = performance.now();
 function frame(now: number): void {
@@ -483,6 +514,35 @@ function renderProps(): void {
     const e = stateEditor(obj, 'gl');
     propsEl.appendChild(row('Glitch', rangeInput(e.get, e.set, 0, 1, 0.01)));
   }
+  if ('sw' in state) {
+    const e = stateEditor(obj, 'sw');
+    propsEl.appendChild(row('Abstraktion', rangeInput(e.get, e.set, 0, 1, 0.01)));
+  }
+  if ('wr' in state) {
+    const e = stateEditor(obj, 'wr');
+    propsEl.appendChild(row('Warp', rangeInput(e.get, e.set, 0, 1, 0.01)));
+  }
+  if ('pix' in state) {
+    const e = stateEditor(obj, 'pix');
+    propsEl.appendChild(row('Pixelraster', rangeInput(e.get, e.set, 0, 1, 0.01)));
+  }
+  if ('duo' in state) {
+    const e = stateEditor(obj, 'duo');
+    propsEl.appendChild(row('Palette-Mix', rangeInput(e.get, e.set, 0, 1, 0.01)));
+  }
+  if (obj.kind === 'media') {
+    propsEl.appendChild(row('Additiv', checkbox(
+      () => obj.extra.blend === 'additive',
+      (v) => { obj.setBlend(v ? 'additive' : 'normal'); markDirty(); },
+    )));
+    const replaceRow = document.createElement('div');
+    replaceRow.className = 'btn-row';
+    replaceRow.append(button('🖼 Datei ersetzen', () => {
+      mediaTarget = obj;
+      mediaInput.click();
+    }));
+    propsEl.appendChild(replaceRow);
+  }
   if ('size' in state) {
     const e = stateEditor(obj, 'size');
     const max = isCloud(obj.kind) ? 4 : 0.12;
@@ -542,6 +602,38 @@ function renderSceneProps(): void {
     button('🎲 Chaos-Mix', randomScene),
   );
   propsEl.appendChild(rndRow);
+
+  propsEl.appendChild(heading('Palette'));
+  const palGrid = document.createElement('div');
+  palGrid.className = 'pal-grid';
+  for (const p of PALETTES) {
+    const chip = document.createElement('button');
+    chip.className = 'pal-chip';
+    chip.title = p.name;
+    for (const col of [p.dark, p.light, p.accent]) {
+      const dot = document.createElement('span');
+      dot.style.background = col;
+      chip.appendChild(dot);
+    }
+    chip.addEventListener('click', () => applyPalette(p, paletteRecolor));
+    palGrid.appendChild(chip);
+  }
+  propsEl.appendChild(palGrid);
+  const palRow = document.createElement('div');
+  palRow.className = 'btn-row';
+  palRow.append(button('🎨 Harmonie würfeln', () => applyPalette(harmonyPalette(), paletteRecolor)));
+  propsEl.appendChild(palRow);
+  propsEl.appendChild(row('Objekte umfärben', checkbox(
+    () => paletteRecolor,
+    (v) => { paletteRecolor = v; },
+  )));
+
+  propsEl.appendChild(heading('Kamera'));
+  const camRow = document.createElement('div');
+  camRow.className = 'btn-row';
+  camRow.append(button('🎲 Kamerafahrt würfeln', randomCamera));
+  propsEl.appendChild(camRow);
+  slider('Wackeln', 'shake', 0, 1, 0.02);
 
   propsEl.appendChild(heading('Szene'));
   settingColor('Hintergrund', 'bg');
@@ -640,7 +732,10 @@ function applySettings(): void {
   engine.key.color.set(settings.keyColor);
   engine.key.intensity = settings.keyIntensity;
   engine.hemi.intensity = settings.hemi;
-  for (const obj of objects) obj.setFog(settings.fogColor, settings.fog);
+  for (const obj of objects) {
+    obj.setFog(settings.fogColor, settings.fog);
+    obj.setDuoColors(settings.tintA, settings.tintB);
+  }
   engine.grid.visible = settings.showGrid;
   engine.ground.visible = settings.showGround;
 }
@@ -715,6 +810,42 @@ document.querySelectorAll<HTMLButtonElement>('[data-add]').forEach((btn) => {
     addObject(btn.dataset.add as ObjectKind);
     closeDrawers();
   });
+});
+
+// Bild/Video laden -> neues Media-Objekt oder Datei am ausgewählten ersetzen
+$('btn-add-media').addEventListener('click', () => {
+  mediaTarget = null;
+  mediaInput.click();
+  closeDrawers();
+});
+mediaInput.addEventListener('change', async () => {
+  const f = mediaInput.files?.[0];
+  mediaInput.value = '';
+  const target = mediaTarget;
+  mediaTarget = null;
+  if (!f) return;
+  const isVideo = f.type.startsWith('video');
+  const src = isVideo
+    ? URL.createObjectURL(f)
+    : await new Promise<string>((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(r.result as string);
+      r.onerror = () => reject(new Error('Datei konnte nicht gelesen werden'));
+      r.readAsDataURL(f);
+    });
+  const obj = target ?? spawn('media');
+  try {
+    await obj.setMediaSource(src, isVideo ? 'video' : 'image');
+  } catch {
+    alert('Datei konnte nicht geladen werden.');
+    if (!target) removeObject(obj);
+    return;
+  }
+  obj.setDuoColors(settings.tintA, settings.tintB);
+  if (playing) obj.setVideoPlaying(true);
+  select(obj);
+  refreshTimeline();
+  markDirty();
 });
 
 playBtn.addEventListener('click', () => setPlaying(!playing));
@@ -867,7 +998,7 @@ function beginRenderMode(): () => void {
 $('btn-png').addEventListener('click', () => {
   const restore = beginRenderMode();
   applyTime(time);
-  engine.composer.render();
+  engine.render();
   const url = canvas.toDataURL('image/png');
   restore();
   const a = document.createElement('a');
@@ -885,6 +1016,10 @@ $('btn-export').addEventListener('click', async () => {
   const status = $('export-status');
   overlay.hidden = false;
   const restore = beginRenderMode();
+  for (const obj of objects) {
+    obj.syncVideo(0);
+    obj.setVideoPlaying(true);
+  }
   try {
     const blob = await exportWebM({
       canvas,
@@ -896,7 +1031,7 @@ $('btn-export').addEventListener('click', async () => {
         const cam = sampleKeyframes(cameraKeyframes, time);
         if (cam) applyCameraState(cam);
         engine.setFxTime(time);
-        engine.composer.render();
+        engine.render();
       },
       onProgress: (f) => {
         progress.style.width = `${Math.round(f * 100)}%`;
@@ -907,6 +1042,7 @@ $('btn-export').addEventListener('click', async () => {
   } catch (err) {
     alert(err instanceof Error ? err.message : 'Export fehlgeschlagen.');
   } finally {
+    for (const obj of objects) obj.setVideoPlaying(false);
     restore();
     overlay.hidden = true;
     exporting = false;
@@ -920,28 +1056,97 @@ const rand = (a: number, b: number): number => a + Math.random() * (b - a);
 const pick = <T>(arr: readonly T[]): T => arr[Math.floor(Math.random() * arr.length)];
 const chance = (p: number): boolean => Math.random() < p;
 
-// kuratierte Kino-Paletten: [Schatten, Licht]
-const PALETTES: ReadonlyArray<readonly [string, string]> = [
-  ['#0e2a38', '#ff9a3c'], // Teal & Orange
-  ['#1a0533', '#00eaff'], // Cyber
-  ['#160607', '#ff2e4d'], // Crimson
-  ['#0d0b06', '#ffd166'], // Gold Noir
-  ['#03170e', '#8dff57'], // Acid
-  ['#050505', '#ffffff'], // Mono
-  ['#120a2a', '#c77dff'], // Violet Dream
-  ['#04141f', '#bfe9ff'], // Ice
-  ['#200a00', '#ff5e00'], // Ember
-  ['#001a12', '#00ffc8'], // Emerald Neon
+// kuratierte harmonische Kino-Paletten
+interface Palette {
+  name: string;
+  bg: string;
+  dark: string;
+  light: string;
+  accent: string;
+}
+
+const PALETTES: readonly Palette[] = [
+  { name: 'Teal & Orange', bg: '#02090e', dark: '#0e2a38', light: '#ff9a3c', accent: '#3ec6c0' },
+  { name: 'Cyber', bg: '#070113', dark: '#1a0533', light: '#00eaff', accent: '#ff2ee6' },
+  { name: 'Crimson', bg: '#070203', dark: '#160607', light: '#ff2e4d', accent: '#ff9d8a' },
+  { name: 'Gold Noir', bg: '#050402', dark: '#0d0b06', light: '#ffd166', accent: '#c8873a' },
+  { name: 'Acid', bg: '#010a05', dark: '#03170e', light: '#8dff57', accent: '#eaff2e' },
+  { name: 'Mono', bg: '#000000', dark: '#050505', light: '#ffffff', accent: '#9aa0b5' },
+  { name: 'Violet Dream', bg: '#060312', dark: '#120a2a', light: '#c77dff', accent: '#6f5cff' },
+  { name: 'Ice', bg: '#010a12', dark: '#04141f', light: '#bfe9ff', accent: '#4ea0e1' },
+  { name: 'Ember', bg: '#0c0300', dark: '#200a00', light: '#ff5e00', accent: '#ffc491' },
+  { name: 'Emerald Neon', bg: '#000a07', dark: '#001a12', light: '#00ffc8', accent: '#7bffe6' },
+  { name: 'Neon Noir', bg: '#050208', dark: '#150a20', light: '#ff2e88', accent: '#2ee6ff' },
+  { name: 'Pastell', bg: '#0b0d12', dark: '#2a2438', light: '#ffd6e8', accent: '#bcd8ff' },
+  { name: 'Sunset', bg: '#0a0410', dark: '#2b0a3d', light: '#ff7e5f', accent: '#feb47b' },
+  { name: 'Deep Sea', bg: '#00060d', dark: '#02182b', light: '#37d6c3', accent: '#2a6fdb' },
 ];
+
+let currentPalette: Palette = PALETTES[0];
+
+/** Farbtheorie-Generator: Basiston + Schema -> garantiert harmonische Palette. */
+function harmonyPalette(): Palette {
+  const h = Math.random();
+  const scheme = pick(['analog', 'komplementaer', 'triade', 'split'] as const);
+  const hex = (hh: number, s: number, l: number) =>
+    `#${new THREE.Color().setHSL(((hh % 1) + 1) % 1, s, l).getHexString()}`;
+  let h2 = h, h3 = h;
+  if (scheme === 'analog') { h2 = h + 0.08; h3 = h - 0.08; }
+  else if (scheme === 'komplementaer') { h2 = h + 0.5; h3 = h + 0.56; }
+  else if (scheme === 'triade') { h2 = h + 1 / 3; h3 = h + 2 / 3; }
+  else { h2 = h + 0.42; h3 = h + 0.58; }
+  return {
+    name: 'Harmonie',
+    bg: hex(h, rand(0.35, 0.6), rand(0.02, 0.05)),
+    dark: hex(h, rand(0.45, 0.65), rand(0.09, 0.16)),
+    light: hex(h2, rand(0.75, 0.95), rand(0.55, 0.7)),
+    accent: hex(h3, rand(0.7, 0.95), rand(0.45, 0.62)),
+  };
+}
+
+/** Palette auf den Look anwenden; optional alle Objekte harmonisch umfärben. */
+function applyPalette(p: Palette, recolorObjects: boolean): void {
+  currentPalette = p;
+  settings.tintA = p.dark;
+  settings.tintB = p.light;
+  settings.bg = p.bg;
+  settings.fogColor = p.bg;
+  settings.keyColor = p.light;
+
+  if (recolorObjects) {
+    let lightIdx = 0;
+    for (const obj of objects) {
+      let hexColor: string | null = null;
+      if (isCloud(obj.kind)) hexColor = chance(0.5) ? '#ffffff' : p.light;
+      else if (obj.kind === 'pointLight') hexColor = lightIdx++ % 2 === 0 ? p.light : p.accent;
+      else if (obj.kind === 'particles' || obj.kind === 'text') hexColor = p.light;
+      else if (obj.kind !== 'media') hexColor = chance(0.5) ? p.accent : '#ffffff';
+      if (!hexColor) continue;
+      const col = hexToRgb(hexColor);
+      const s = obj.captureState();
+      if (!('cr' in s)) continue;
+      s.cr = col.r; s.cg = col.g; s.cb = col.b;
+      obj.applyState(s);
+      // Keyframes mitziehen, sonst springt die Farbe beim Abspielen zurück
+      for (const kf of obj.keyframes) {
+        if ('cr' in kf.state) {
+          kf.state.cr = col.r; kf.state.cg = col.g; kf.state.cb = col.b;
+        }
+      }
+    }
+  }
+  applySettings();
+  renderProps();
+  markDirty();
+}
 
 const EASING_POOL = ['easeInOut', 'easeIn', 'easeOut', 'linear'] as const;
 
 function randomLook(): void {
-  const [dark, light] = pick(PALETTES);
-  settings.tintA = dark;
-  settings.tintB = light;
+  const p = chance(0.55) ? pick(PALETTES) : harmonyPalette();
+  applyPalette(p, false);
   settings.tint = chance(0.85) ? rand(0.45, 1) : 0;
-  settings.bg = chance(0.7) ? '#000000' : dark;
+  settings.bg = chance(0.6) ? '#000000' : p.bg;
   settings.bloom = rand(0.25, 1.1);
   settings.exposure = rand(0.95, 1.5);
   settings.rgb = chance(0.7) ? rand(0.1, 0.6) : 0;
@@ -954,20 +1159,23 @@ function randomLook(): void {
   settings.grid = chance(0.5) ? rand(0.05, 0.25) : 0;
   settings.vignette = rand(0.35, 0.9);
   settings.fog = chance(0.6) ? rand(0.02, 0.1) : 0;
-  settings.fogColor = chance(0.5) ? '#000000' : dark;
-  settings.keyColor = chance(0.6) ? light : '#ffffff';
+  settings.fogColor = chance(0.5) ? '#000000' : p.bg;
+  settings.keyColor = chance(0.6) ? p.light : '#ffffff';
   settings.keyIntensity = rand(0.8, 3);
   settings.hemi = rand(0.2, 0.9);
+  settings.shake = chance(0.35) ? rand(0.1, 0.5) : 0;
   applySettings();
   renderProps();
   markDirty();
 }
 
-/** Drehung + Glitch-Pulse; Start- und Endzustand identisch -> sauberer Loop. */
+/** Drehung + Glitch-/Abstraktions-Pulse; Start = Ende -> sauberer Loop. */
 function cloudAnim(obj: ClipObject): void {
   const dur = settings.duration;
   const turns = pick([-1, 1]) * pick([1, 1, 2]) * Math.PI * 2;
   const glLow = rand(0, 0.12);
+  const swirly = chance(0.45);
+  const swLow = rand(0, 0.15);
   const mids = Array.from(
     { length: 2 + Math.floor(Math.random() * 3) },
     () => rand(0.5, dur - 0.5),
@@ -978,8 +1186,59 @@ function cloudAnim(obj: ClipObject): void {
     kfAt(obj, t, {
       ry: (t / dur) * turns,
       gl: isEdge ? glLow : rand(0.2, 1),
+      ...(swirly ? { sw: isEdge ? swLow : rand(0.2, 0.85) } : {}),
     }, pick(EASING_POOL));
   });
+}
+
+// -------------------------------------------------------- random camera
+
+type CamPattern = 'orbit' | 'pushIn' | 'spiral' | 'drift' | 'riser';
+
+/** Zufällige Kamerafahrt für die aktuelle Szene (ersetzt Kamera-Keyframes). */
+function randomCamera(): void {
+  const dur = settings.duration;
+  const pattern: CamPattern = pick(['orbit', 'pushIn', 'spiral', 'drift', 'riser']);
+  const a0 = rand(0, Math.PI * 2);
+  const r0 = rand(4.4, 6.6);
+  const y0 = rand(0.3, 1.8);
+  cameraKeyframes = [];
+  const put = (
+    t: number, a: number, r: number, y: number, ty = 0,
+    easing: 'easeInOut' | 'linear' = 'easeInOut',
+  ) => {
+    upsertKeyframe(cameraKeyframes, t, {
+      px: Math.cos(a) * r, py: y, pz: Math.sin(a) * r, tx: 0, ty, tz: 0,
+    }, easing);
+  };
+
+  if (pattern === 'orbit') {
+    put(0, a0, r0, y0);
+    put(dur, a0 + rand(-0.9, 0.9), r0 * rand(0.85, 1), y0 + rand(-0.3, 0.3));
+  } else if (pattern === 'pushIn') {
+    put(0, a0, r0, y0);
+    put(dur, a0 + rand(-0.15, 0.15), r0 * rand(0.42, 0.62), y0 * rand(0.6, 0.9));
+  } else if (pattern === 'spiral') {
+    const dir = pick([-1, 1]);
+    const sweep = rand(1.2, 2.2) * dir;
+    const y1 = y0 + rand(0.8, 1.8);
+    const steps = 5;
+    for (let i = 0; i <= steps; i++) {
+      const f = i / steps;
+      put(f * dur, a0 + f * sweep, r0 * (1 - 0.4 * f), y0 + (y1 - y0) * f, 0, 'linear');
+    }
+  } else if (pattern === 'drift') {
+    put(0, a0, r0, y0, rand(-0.4, 0.2));
+    put(dur, a0 + rand(0.15, 0.35) * pick([-1, 1]), r0, y0 + rand(-0.2, 0.2), rand(0, 0.6));
+  } else {
+    // riser: von unten aufsteigen, Blick kippt nach unten
+    put(0, a0, r0 * 0.9, rand(-1.4, -0.5), rand(0.4, 1));
+    put(dur, a0 + rand(-0.4, 0.4), r0, rand(1.4, 2.6), rand(-0.4, 0));
+  }
+
+  refreshTimeline();
+  applyTime(time);
+  markDirty();
 }
 
 /** Kreisbahn um den Ursprung (linear -> gleichmäßige Bewegung, loopt sauber). */
@@ -1004,7 +1263,10 @@ function randomScene(): void {
   const light = settings.tintB;
 
   const nClouds = chance(0.5) ? 2 : 1;
-  const cloudKinds: readonly ObjectKind[] = ['cloudSphere', 'cloudKnot', 'cloudTorus', 'cloudWave'];
+  const cloudKinds: readonly ObjectKind[] = [
+    'cloudSphere', 'cloudKnot', 'cloudTorus', 'cloudWave',
+    'cloudBlob', 'cloudGalaxy', 'cloudNet',
+  ];
   for (let i = 0; i < nClouds; i++) {
     const obj = spawn(pick(cloudKinds));
     const sc = rand(0.7, 1.4);
@@ -1013,7 +1275,8 @@ function randomScene(): void {
       ...obj.captureState(),
       px: rand(-0.8, 0.8) * i, py: rand(-0.4, 0.4),
       sx: sc, sy: sc, sz: sc,
-      di: rand(0.1, 0.55), size: rand(0.9, 2.2),
+      di: rand(0.1, 0.55), sw: chance(0.4) ? rand(0.1, 0.6) : 0,
+      size: rand(0.9, 2.2),
       cr: col.r, cg: col.g, cb: col.b, op: rand(0.75, 1),
     });
     cloudAnim(obj);
@@ -1045,7 +1308,7 @@ function randomScene(): void {
   const nLights = chance(0.7) ? 1 + (chance(0.4) ? 1 : 0) : 0;
   for (let i = 0; i < nLights; i++) {
     const l = spawn('pointLight');
-    const col = hexToRgb(chance(0.6) ? light : pick(PALETTES)[1]);
+    const col = hexToRgb(chance(0.6) ? light : currentPalette.accent);
     l.applyState({
       ...l.captureState(),
       cr: col.r, cg: col.g, cb: col.b, in: rand(4, 14),
@@ -1063,20 +1326,7 @@ function randomScene(): void {
     });
   }
 
-  // langsame Kamerafahrt
-  const a0 = rand(0, Math.PI * 2);
-  const r0 = rand(4.6, 6.4);
-  const y0 = rand(0.3, 1.6);
-  const a1 = a0 + rand(-0.7, 0.7);
-  const r1 = r0 * rand(0.72, 0.94);
-  const y1 = y0 + rand(-0.4, 0.5);
-  cameraKeyframes = [];
-  upsertKeyframe(cameraKeyframes, 0, {
-    px: Math.cos(a0) * r0, py: y0, pz: Math.sin(a0) * r0, tx: 0, ty: 0, tz: 0,
-  }, 'easeInOut');
-  upsertKeyframe(cameraKeyframes, dur, {
-    px: Math.cos(a1) * r1, py: y1, pz: Math.sin(a1) * r1, tx: 0, ty: 0, tz: 0,
-  }, 'easeInOut');
+  randomCamera();
 
   refreshSceneList();
   refreshTimeline();
@@ -1088,6 +1338,7 @@ function randomScene(): void {
 
 $('btn-rnd-look').addEventListener('click', randomLook);
 $('btn-rnd-scene').addEventListener('click', randomScene);
+$('btn-rnd-cam').addEventListener('click', randomCamera);
 
 // ---------------------------------------------------------------- demo scene
 
