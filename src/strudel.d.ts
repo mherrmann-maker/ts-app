@@ -26,9 +26,14 @@ declare module '@strudel/core' {
 
 declare module '@strudel/webaudio' {
   export function initAudio(): Promise<void>;
+  export function initAudioOnFirstClick(): Promise<void>;
   export function getAudioContext(): AudioContext;
   export function getDefaultAudioContext(): AudioContext;
+  export function samples(input: string | object, base?: string): Promise<void>;
+  export function registerSynthSounds(): Promise<void> | void;
+  export function registerZZFXSounds(): Promise<void> | void;
   export const webaudioOutput: any;
+  export const soundMap: any;
 }
 
 declare module '@strudel/mini' {

@@ -9,7 +9,8 @@ import { renderTrackList, highlightStep } from './daw/tracks';
 import { initPianoRoll, setPianoRollStep } from './daw/pianoroll';
 import { getScaleNotes, getChordForDegree } from './daw/scales';
 import { generateCode } from './daw/codegen';
-import { initEditor, updateEditorCode } from './daw/editor';
+import { initEditor, updateEditorCode, getEditorCode } from './daw/editor';
+import { playStrudel, stopStrudel, warmupStrudel, onStrudelError } from './daw/strudel-engine';
 import { MelodyTrack, ChordTrack, DrumTrack } from './daw/types';
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
@@ -72,31 +73,71 @@ const arpLen        = document.getElementById('arp-len') as HTMLInputElement;
 const arpLenVal     = document.getElementById('arp-len-val')!;
 const applyArp      = document.getElementById('apply-arp')!;
 
+// ─── Error toast ──────────────────────────────────────────────────────────────
+
+const toast = document.createElement('div');
+toast.className = 'daw-toast hidden';
+document.body.appendChild(toast);
+let toastTimer = 0;
+
+function showToast(msg: string, isError = true) {
+  toast.textContent = msg;
+  toast.classList.toggle('error', isError);
+  toast.classList.remove('hidden');
+  clearTimeout(toastTimer);
+  toastTimer = window.setTimeout(() => toast.classList.add('hidden'), 4000);
+}
+
+onStrudelError(msg => showToast(`Strudel: ${msg}`));
+
 // ─── Transport ────────────────────────────────────────────────────────────────
 
 let playing = false;
+let engine: 'tone' | 'strudel' = 'tone';
 
 Tone.getDestination().volume.value = -6;
+
+function setPlayIcons(isPlaying: boolean) {
+  icoPlay.style.display  = isPlaying ? 'none' : '';
+  icoPause.style.display = isPlaying ? '' : 'none';
+}
+
+async function runStrudelCode(code: string) {
+  // Never let both engines play at once
+  Tone.getTransport().pause();
+  try {
+    await playStrudel(code);
+    playing = true;
+    setPlayIcons(true);
+    showToast('〜 Strudel läuft', false);
+  } catch (e) {
+    showToast(`Strudel: ${e instanceof Error ? e.message : e}`);
+  }
+}
 
 btnPlay.addEventListener('click', async () => {
   playing = !playing;
   if (playing) {
-    await startTransport();
-    icoPlay.style.display  = 'none';
-    icoPause.style.display = '';
+    if (engine === 'strudel') {
+      await runStrudelCode(generateCode());
+    } else {
+      stopStrudel();
+      await startTransport();
+    }
+    setPlayIcons(true);
     if (state.autoRun) codeChanged();
   } else {
     Tone.getTransport().pause();
-    icoPlay.style.display  = '';
-    icoPause.style.display = 'none';
+    stopStrudel();
+    setPlayIcons(false);
   }
 });
 
 btnStop.addEventListener('click', () => {
   stopTransport();
+  stopStrudel();
   playing = false;
-  icoPlay.style.display  = '';
-  icoPause.style.display = 'none';
+  setPlayIcons(false);
 });
 
 bpmDn.addEventListener('click', () => {
@@ -117,6 +158,30 @@ btnAutorun.addEventListener('click', () => {
   btnAutorun.textContent = state.autoRun ? 'AUTO ●' : 'AUTO ○';
   btnAutorun.classList.toggle('active', state.autoRun);
 });
+
+// Engine toggle (Option B): TONE = interner Sequencer, STRUDEL = echte Engine
+const btnEngine = document.getElementById('btn-engine');
+btnEngine?.addEventListener('click', () => {
+  const wasPlaying = playing;
+  // Stop whatever is running before switching
+  Tone.getTransport().pause();
+  stopStrudel();
+  playing = false;
+  setPlayIcons(false);
+
+  engine = engine === 'tone' ? 'strudel' : 'tone';
+  btnEngine.textContent = engine === 'strudel' ? '〜 STRUDEL' : '⚡ TONE';
+  btnEngine.classList.toggle('engine-strudel', engine === 'strudel');
+  showToast(engine === 'strudel'
+    ? 'Echte Strudel-Engine aktiv (strudel.cc Sound)'
+    : 'Tone.js Engine aktiv', false);
+
+  if (engine === 'strudel') warmupStrudel();
+  if (wasPlaying) btnPlay.click();
+});
+
+// Pre-warm Strudel (loads 808/909/Piano-Samples) on the very first touch
+document.addEventListener('pointerdown', () => warmupStrudel(), { once: true });
 
 // ─── Tabs ─────────────────────────────────────────────────────────────────────
 
@@ -536,14 +601,31 @@ btnCopyCode.addEventListener('click', async () => {
   setTimeout(() => { btnCopyCode.textContent = orig; }, 1500);
 });
 
-btnRunCode.addEventListener('click', () => updateEditorCode(generateCode()));
-
-initEditor(codeEditorEl, (code) => {
-  console.log('[DAW] eval:', code.slice(0, 80));
+// AUSFÜHREN: play through the REAL Strudel engine (Option A).
+// If the drawer is open the (possibly hand-edited) editor content runs,
+// otherwise fresh code is generated from the current tracks.
+btnRunCode.addEventListener('click', async () => {
+  let code = drawerOpen ? getEditorCode().trim() : '';
+  if (!code || code.startsWith('// Drücke')) {
+    code = generateCode();
+    updateEditorCode(code);
+  }
+  await runStrudelCode(code);
 });
+
+initEditor(codeEditorEl, (code) => { runStrudelCode(code); });
 
 // ─── Code change helper ───────────────────────────────────────────────────────
 
+let reEvalTimer = 0;
+
 function codeChanged() {
   if (drawerOpen || state.autoRun) updateEditorCode(generateCode());
+  // Live re-eval while the Strudel engine is playing (live-coding feel)
+  if (engine === 'strudel' && playing) {
+    clearTimeout(reEvalTimer);
+    reEvalTimer = window.setTimeout(() => {
+      playStrudel(generateCode()).catch(e => showToast(`Strudel: ${e?.message ?? e}`));
+    }, 350);
+  }
 }

@@ -164,12 +164,40 @@ canvas{touch-action:none;}
   background:rgba(0,255,136,.1);
   box-shadow:0 0 14px rgba(0,255,136,.25);
 }
+.t-pill.engine-strudel{
+  border-color:var(--cyan);color:var(--cyan);
+  background:rgba(0,207,255,.1);
+  box-shadow:0 0 14px rgba(0,207,255,.3);
+}
 .t-back{
   font-family:var(--mono);font-size:9px;letter-spacing:.06em;
   color:var(--muted);text-decoration:none;white-space:nowrap;
   padding:8px 4px;transition:color .15s;
 }
 .t-back:hover{color:var(--text);}
+
+/* ── Toast ──────────────────────────────────────────── */
+.daw-toast{
+  position:fixed;left:50%;transform:translateX(-50%);
+  bottom:calc(70px + var(--sab));z-index:95;
+  max-width:88vw;
+  padding:11px 18px;border-radius:999px;
+  background:rgba(22,32,26,.96);
+  border:1px solid rgba(0,255,136,.4);
+  color:var(--green);
+  font-family:var(--mono);font-size:10.5px;font-weight:700;
+  letter-spacing:.04em;text-align:center;
+  box-shadow:0 8px 30px rgba(0,0,0,.55);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  transition:opacity .25s, transform .25s;
+  pointer-events:none;
+}
+.daw-toast.error{
+  border-color:rgba(244,63,94,.5);color:#ff8fa3;
+  background:rgba(40,18,24,.96);
+}
+.daw-toast.hidden{opacity:0;transform:translateX(-50%) translateY(12px);}
 
 /* ── Tabs ───────────────────────────────────────────── */
 .tab-bar{
