@@ -189,10 +189,15 @@ export class Player {
     ctx.fillRect(0, 0, cw, ch)
     if (!seg) return
 
-    const p = Math.min(1, Math.max(0, (t - seg.start) / Math.max(0.001, seg.end - seg.start)))
+    const segLen = Math.max(0.001, seg.end - seg.start)
+    const p = Math.min(1, Math.max(0, (t - seg.start) / segLen))
     const m = seg.media
     const el = m.el
     const beat = this.lastBeat(t)
+    const fx = this.opts.flash && beat !== null
+    // Beat-Hüllkurve: 1 direkt auf dem Beat, klingt schnell ab
+    const bs = fx ? beat!.strength : 0
+    const env = fx ? Math.exp(-beat!.dt * 9) : 0
 
     let zoom = 1
     let panX = 0
@@ -202,10 +207,17 @@ export class Player {
       zoom = seg.kb.z0 + (seg.kb.z1 - seg.kb.z0) * e
       panX = seg.kb.x0 + (seg.kb.x1 - seg.kb.x0) * e
       panY = seg.kb.y0 + (seg.kb.y1 - seg.kb.y0) * e
+    } else {
+      // Auch Clips bekommen eine langsame Zoom-Fahrt
+      zoom = 1.02 + 0.06 * easeInOut(p)
     }
-    if (this.opts.flash && beat) {
-      // Dezenter Zoom-Puls auf jedem Beat
-      zoom *= 1 + beat.strength * 0.025 * Math.exp(-beat.dt * 8)
+
+    if (fx) {
+      // Zoom-Punch auf jedem Beat, Stärke folgt der Beat-Energie
+      zoom *= 1 + 0.07 * bs * env
+      // Harter Zoom-Einstieg auf jedem Schnitt (Schnitte liegen auf Beats)
+      const tIn = t - seg.start
+      zoom *= 1 + 0.06 * Math.exp(-tIn * 12)
     }
 
     const baseScale = Math.max(cw / m.width, ch / m.height)
@@ -214,16 +226,38 @@ export class Player {
     const h = m.height * s
     const maxPanX = (w - cw) / 2
     const maxPanY = (h - ch) / 2
-    const x = (cw - w) / 2 + panX * maxPanX
-    const y = (ch - h) / 2 + panY * maxPanY
+    let x = (cw - w) / 2 + panX * maxPanX
+    let y = (ch - h) / 2 + panY * maxPanY
+
+    if (fx && bs > 0.3) {
+      // Kamera-Shake nach starken Beats – begrenzt auf den Überstand,
+      // damit keine schwarzen Ränder sichtbar werden
+      const margin = Math.max(0, Math.min(maxPanX - Math.abs(x - (cw - w) / 2), maxPanY - Math.abs(y - (ch - h) / 2)))
+      const amp = Math.min(margin, 0.012 * cw * bs) * Math.exp(-beat!.dt * 14)
+      x += (Math.random() * 2 - 1) * amp
+      y += (Math.random() * 2 - 1) * amp
+    }
+
     try {
       ctx.drawImage(el, x, y, w, h)
+      // Ghost-Echo auf starken Beats: doppelt versetzt, additiv – wirkt wie
+      // ein kurzer Chromatic-/Echo-Blitz exakt auf dem Schlag
+      const ghost = fx && bs > 0.5 ? 0.3 * bs * env : 0
+      if (ghost > 0.02) {
+        const off = 0.012 * cw * env
+        ctx.globalCompositeOperation = 'lighter'
+        ctx.globalAlpha = ghost
+        ctx.drawImage(el, x - off, y, w, h)
+        ctx.drawImage(el, x + off, y + off * 0.4, w, h)
+        ctx.globalAlpha = 1
+        ctx.globalCompositeOperation = 'source-over'
+      }
     } catch {
       // Frame noch nicht dekodiert – letztes Bild bleibt schwarz
     }
 
-    if (this.opts.flash && beat) {
-      const alpha = beat.strength * Math.exp(-beat.dt * 10) * 0.22
+    if (fx) {
+      const alpha = bs * Math.exp(-beat!.dt * 10) * 0.26
       if (alpha > 0.005) {
         ctx.fillStyle = `rgba(255, 255, 255, ${alpha.toFixed(3)})`
         ctx.fillRect(0, 0, cw, ch)

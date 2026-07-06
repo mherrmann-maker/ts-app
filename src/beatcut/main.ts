@@ -44,6 +44,7 @@ let videos: MediaItem[] = []
 let player: Player | null = null
 let waveBackground: HTMLCanvasElement | null = null
 let wakeLock: { release(): Promise<void> } | null = null
+let pendingLoads = 0
 
 /* ---------- Helfer ---------- */
 
@@ -72,7 +73,8 @@ function initSegmented(seg: HTMLDivElement, onChange?: () => void): void {
 }
 
 function updateButtons(): void {
-  const ready = analysis !== null && images.length + videos.length > 0 && player === null
+  const ready =
+    analysis !== null && images.length + videos.length > 0 && player === null && pendingLoads === 0
   btnPreview.disabled = !ready
   btnExport.disabled = !ready
   btnStop.disabled = player === null
@@ -136,6 +138,8 @@ function handleAudio(files: File[]): void {
   const file = files.find((f) => f.type.startsWith('audio/') || /\.(mp3|wav|m4a|aac|ogg|flac)$/i.test(f.name))
   if (!file) return
   void (async () => {
+    pendingLoads++
+    updateButtons()
     try {
       setStatus(`Analysiere Rhythmik von „${file.name}“ …`)
       audioInfo.textContent = 'ANALYSIERE RHYTHMIK …'
@@ -163,26 +167,33 @@ function handleAudio(files: File[]): void {
       audioInfo.textContent = 'DATEI KONNTE NICHT DEKODIERT WERDEN'
       setStatus(`Fehler bei der Audio-Analyse: ${err instanceof Error ? err.message : err}`)
     }
+    pendingLoads--
     updateButtons()
   })()
 }
 
 function handleImages(files: File[]): void {
   void (async () => {
+    pendingLoads++
+    updateButtons()
     imageInfo.textContent = 'LADE BILDER …'
     images = await loadImages(files)
     imageInfo.textContent = images.length > 0 ? `${images.length} BILD(ER) GELADEN` : 'KEINE BILDER GEFUNDEN'
     cardImages.classList.toggle('loaded', images.length > 0)
+    pendingLoads--
     updateButtons()
   })()
 }
 
 function handleVideos(files: File[]): void {
   void (async () => {
+    pendingLoads++
+    updateButtons()
     videoInfo.textContent = 'LADE CLIPS …'
     videos = await loadVideos(files)
     videoInfo.textContent = videos.length > 0 ? `${videos.length} CLIP(S) GELADEN` : 'KEINE CLIPS GEFUNDEN'
     cardVideos.classList.toggle('loaded', videos.length > 0)
+    pendingLoads--
     updateButtons()
   })()
 }

@@ -50,8 +50,33 @@ export function buildTimeline(
   return segments
 }
 
-/** Gemischte Reihenfolge ohne direkte Wiederholungen (soweit möglich). */
+/**
+ * Reihenfolge der Medien: Bilder und Clips wechseln sich konsequent ab,
+ * damit der Schnitt sichtbar gemischt ist; innerhalb einer Sorte wird
+ * gemischt und direkte Wiederholungen werden vermieden.
+ */
 function makeOrder(pool: MediaItem[], count: number): MediaItem[] {
+  const images = pool.filter((m) => m.kind === 'image')
+  const videos = pool.filter((m) => m.kind === 'video')
+  if (images.length === 0 || videos.length === 0) return bagOrder(pool, count)
+
+  const out: MediaItem[] = []
+  const bags: Record<'image' | 'video', MediaItem[]> = { image: [], video: [] }
+  const pools: Record<'image' | 'video', MediaItem[]> = { image: images, video: videos }
+  let kind: 'image' | 'video' = Math.random() < 0.5 ? 'image' : 'video'
+  for (let i = 0; i < count; i++) {
+    const src = pools[kind]
+    if (bags[kind].length === 0) bags[kind] = shuffle([...src])
+    if (src.length > 1 && bags[kind][0] === out[out.length - 2]) {
+      bags[kind].push(bags[kind].shift()!)
+    }
+    out.push(bags[kind].shift()!)
+    kind = kind === 'image' ? 'video' : 'image'
+  }
+  return out
+}
+
+function bagOrder(pool: MediaItem[], count: number): MediaItem[] {
   const out: MediaItem[] = []
   let bag: MediaItem[] = []
   for (let i = 0; i < count; i++) {
