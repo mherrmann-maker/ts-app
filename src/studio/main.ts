@@ -20,6 +20,19 @@ interface SceneSettings {
   scan: number;
   grid: number;
   vignette: number;
+  rgb: number;
+  warp: number;
+  glitchFx: number;
+  pixel: number;
+  blur: number;
+  tint: number;
+  tintA: string;
+  tintB: string;
+  fog: number;
+  fogColor: string;
+  keyColor: string;
+  keyIntensity: number;
+  hemi: number;
   showGrid: boolean;
   showGround: boolean;
   duration: number;
@@ -36,6 +49,10 @@ interface ProjectData {
 const DEFAULT_SETTINGS: SceneSettings = {
   bg: '#000000', bloom: 0.3, exposure: 1.1,
   grain: 0.05, scan: 0.1, grid: 0.1, vignette: 0.5,
+  rgb: 0.12, warp: 0, glitchFx: 0, pixel: 0, blur: 0.2,
+  tint: 0, tintA: '#0e2a38', tintB: '#ff9a3c',
+  fog: 0.035, fogColor: '#000000',
+  keyColor: '#ffffff', keyIntensity: 1.6, hemi: 0.5,
   showGrid: false, showGround: false,
   duration: 8, fps: 60,
 };
@@ -183,14 +200,19 @@ function frame(now: number): void {
 
 // ---------------------------------------------------------------- objects
 
-function addObject(kind: ObjectKind): ClipObject {
+function spawn(kind: ObjectKind, extra?: { text?: string }): ClipObject {
   const count = objects.filter((o) => o.kind === kind).length + 1;
   const name = count > 1 ? `${KIND_LABEL[kind]} ${count}` : KIND_LABEL[kind];
-  const extra = kind === 'text' ? { text: 'motion' } : {};
-  const obj = new ClipObject(kind, name, extra);
+  const obj = new ClipObject(kind, name, extra ?? (kind === 'text' ? { text: 'motion' } : {}));
   obj.setCloudTime(time);
+  obj.setFog(settings.fogColor, settings.fog);
   objects.push(obj);
   engine.world.add(obj.root);
+  return obj;
+}
+
+function addObject(kind: ObjectKind): ClipObject {
+  const obj = spawn(kind);
   select(obj);
   refreshTimeline();
   markDirty();
@@ -218,6 +240,7 @@ function duplicateObject(obj: ClipObject): void {
   }));
   const copy = ClipObject.fromJSON(data);
   copy.setCloudTime(time);
+  copy.setFog(settings.fogColor, settings.fog);
   objects.push(copy);
   engine.world.add(copy.root);
   select(copy);
@@ -495,11 +518,12 @@ function renderProps(): void {
 }
 
 function renderSceneProps(): void {
-  propsEl.appendChild(heading('Szene'));
-  propsEl.appendChild(row('Hintergrund', colorInput(
-    () => settings.bg,
-    (hex) => { settings.bg = hex; applySettings(); markDirty(); },
-  )));
+  const settingColor = (label: string, key: 'bg' | 'tintA' | 'tintB' | 'fogColor' | 'keyColor') => {
+    propsEl.appendChild(row(label, colorInput(
+      () => settings[key],
+      (hex) => { settings[key] = hex; applySettings(); markDirty(); },
+    )));
+  };
   const slider = (
     label: string, key: keyof SceneSettings, min: number, max: number, step: number,
   ) => {
@@ -509,10 +533,41 @@ function renderSceneProps(): void {
       min, max, step,
     )));
   };
-  slider('Bloom', 'bloom', 0, 1.5, 0.02);
+
+  propsEl.appendChild(heading('Zufall'));
+  const rndRow = document.createElement('div');
+  rndRow.className = 'btn-row';
+  rndRow.append(
+    button('🎲 Look würfeln', randomLook),
+    button('🎲 Chaos-Mix', randomScene),
+  );
+  propsEl.appendChild(rndRow);
+
+  propsEl.appendChild(heading('Szene'));
+  settingColor('Hintergrund', 'bg');
+  slider('Bloom / Glow', 'bloom', 0, 1.5, 0.02);
   slider('Belichtung', 'exposure', 0.4, 2.2, 0.02);
 
-  propsEl.appendChild(heading('Look (Post-FX)'));
+  propsEl.appendChild(heading('Cinematic FX'));
+  slider('RGB-Shift', 'rgb', 0, 1, 0.01);
+  slider('Screen-Glitch', 'glitchFx', 0, 1, 0.01);
+  slider('Verzerrung', 'warp', 0, 1, 0.01);
+  slider('Unschärfe', 'blur', 0, 1, 0.01);
+  slider('Pixelraster', 'pixel', 0, 1, 0.01);
+  slider('Duotone', 'tint', 0, 1, 0.01);
+  settingColor('Farbe dunkel', 'tintA');
+  settingColor('Farbe hell', 'tintB');
+
+  propsEl.appendChild(heading('Atmosphäre'));
+  slider('Nebel', 'fog', 0, 0.25, 0.005);
+  settingColor('Nebelfarbe', 'fogColor');
+
+  propsEl.appendChild(heading('Licht'));
+  settingColor('Lichtfarbe', 'keyColor');
+  slider('Intensität', 'keyIntensity', 0, 6, 0.05);
+  slider('Ambient', 'hemi', 0, 2, 0.02);
+
+  propsEl.appendChild(heading('Look (Retro)'));
   slider('Scanlines', 'scan', 0, 0.5, 0.01);
   slider('Grain', 'grain', 0, 0.3, 0.01);
   slider('Raster-Overlay', 'grid', 0, 0.6, 0.01);
@@ -567,10 +622,25 @@ function applySettings(): void {
   (engine.scene.background as THREE.Color).set(settings.bg);
   engine.bloomPass.strength = settings.bloom;
   engine.renderer.toneMappingExposure = settings.exposure;
-  engine.fxPass.uniforms.uGrain.value = settings.grain;
-  engine.fxPass.uniforms.uScan.value = settings.scan;
-  engine.fxPass.uniforms.uGrid.value = settings.grid;
-  engine.fxPass.uniforms.uVignette.value = settings.vignette;
+  const u = engine.fxPass.uniforms;
+  u.uGrain.value = settings.grain;
+  u.uScan.value = settings.scan;
+  u.uGrid.value = settings.grid;
+  u.uVignette.value = settings.vignette;
+  u.uRgb.value = settings.rgb;
+  u.uWarp.value = settings.warp;
+  u.uGlitchFx.value = settings.glitchFx;
+  u.uPixel.value = settings.pixel;
+  u.uBlur.value = settings.blur;
+  u.uTint.value = settings.tint;
+  (u.uTintA.value as THREE.Color).set(settings.tintA);
+  (u.uTintB.value as THREE.Color).set(settings.tintB);
+  engine.fog.color.set(settings.fogColor);
+  engine.fog.density = Math.max(settings.fog, 0.00001);
+  engine.key.color.set(settings.keyColor);
+  engine.key.intensity = settings.keyIntensity;
+  engine.hemi.intensity = settings.hemi;
+  for (const obj of objects) obj.setFog(settings.fogColor, settings.fog);
   engine.grid.visible = settings.showGrid;
   engine.ground.visible = settings.showGround;
 }
@@ -843,6 +913,181 @@ $('btn-export').addEventListener('click', async () => {
     setTime(0);
   }
 });
+
+// ---------------------------------------------------------------- randomizer
+
+const rand = (a: number, b: number): number => a + Math.random() * (b - a);
+const pick = <T>(arr: readonly T[]): T => arr[Math.floor(Math.random() * arr.length)];
+const chance = (p: number): boolean => Math.random() < p;
+
+// kuratierte Kino-Paletten: [Schatten, Licht]
+const PALETTES: ReadonlyArray<readonly [string, string]> = [
+  ['#0e2a38', '#ff9a3c'], // Teal & Orange
+  ['#1a0533', '#00eaff'], // Cyber
+  ['#160607', '#ff2e4d'], // Crimson
+  ['#0d0b06', '#ffd166'], // Gold Noir
+  ['#03170e', '#8dff57'], // Acid
+  ['#050505', '#ffffff'], // Mono
+  ['#120a2a', '#c77dff'], // Violet Dream
+  ['#04141f', '#bfe9ff'], // Ice
+  ['#200a00', '#ff5e00'], // Ember
+  ['#001a12', '#00ffc8'], // Emerald Neon
+];
+
+const EASING_POOL = ['easeInOut', 'easeIn', 'easeOut', 'linear'] as const;
+
+function randomLook(): void {
+  const [dark, light] = pick(PALETTES);
+  settings.tintA = dark;
+  settings.tintB = light;
+  settings.tint = chance(0.85) ? rand(0.45, 1) : 0;
+  settings.bg = chance(0.7) ? '#000000' : dark;
+  settings.bloom = rand(0.25, 1.1);
+  settings.exposure = rand(0.95, 1.5);
+  settings.rgb = chance(0.7) ? rand(0.1, 0.6) : 0;
+  settings.warp = chance(0.45) ? rand(0.08, 0.5) : 0;
+  settings.glitchFx = chance(0.6) ? rand(0.1, 0.7) : 0;
+  settings.pixel = chance(0.12) ? rand(0.15, 0.5) : 0;
+  settings.blur = chance(0.55) ? rand(0.15, 0.8) : 0;
+  settings.scan = chance(0.7) ? rand(0.05, 0.3) : 0;
+  settings.grain = rand(0.02, 0.16);
+  settings.grid = chance(0.5) ? rand(0.05, 0.25) : 0;
+  settings.vignette = rand(0.35, 0.9);
+  settings.fog = chance(0.6) ? rand(0.02, 0.1) : 0;
+  settings.fogColor = chance(0.5) ? '#000000' : dark;
+  settings.keyColor = chance(0.6) ? light : '#ffffff';
+  settings.keyIntensity = rand(0.8, 3);
+  settings.hemi = rand(0.2, 0.9);
+  applySettings();
+  renderProps();
+  markDirty();
+}
+
+/** Drehung + Glitch-Pulse; Start- und Endzustand identisch -> sauberer Loop. */
+function cloudAnim(obj: ClipObject): void {
+  const dur = settings.duration;
+  const turns = pick([-1, 1]) * pick([1, 1, 2]) * Math.PI * 2;
+  const glLow = rand(0, 0.12);
+  const mids = Array.from(
+    { length: 2 + Math.floor(Math.random() * 3) },
+    () => rand(0.5, dur - 0.5),
+  ).sort((a, b) => a - b);
+  const times = [0, ...mids, dur];
+  times.forEach((t, i) => {
+    const isEdge = i === 0 || i === times.length - 1;
+    kfAt(obj, t, {
+      ry: (t / dur) * turns,
+      gl: isEdge ? glLow : rand(0.2, 1),
+    }, pick(EASING_POOL));
+  });
+}
+
+/** Kreisbahn um den Ursprung (linear -> gleichmäßige Bewegung, loopt sauber). */
+function orbitAnim(obj: ClipObject, radius: number, y: number, dirTurns: number): void {
+  const dur = settings.duration;
+  const phase = rand(0, Math.PI * 2);
+  const steps = 8;
+  for (let i = 0; i <= steps; i++) {
+    const t = (i / steps) * dur;
+    const a = phase + (t / dur) * dirTurns * Math.PI * 2;
+    kfAt(obj, t, { px: Math.cos(a) * radius, py: y, pz: Math.sin(a) * radius }, 'linear');
+  }
+}
+
+function randomScene(): void {
+  if (objects.length > 0
+    && !confirm('Aktuelle Szene durch einen zufälligen Chaos-Mix ersetzen?')) return;
+  clearProject();
+  settings.duration = pick([6, 8, 8, 10]);
+  randomLook();
+  const dur = settings.duration;
+  const light = settings.tintB;
+
+  const nClouds = chance(0.5) ? 2 : 1;
+  const cloudKinds: readonly ObjectKind[] = ['cloudSphere', 'cloudKnot', 'cloudTorus', 'cloudWave'];
+  for (let i = 0; i < nClouds; i++) {
+    const obj = spawn(pick(cloudKinds));
+    const sc = rand(0.7, 1.4);
+    const col = chance(0.55) ? { r: 1, g: 1, b: 1 } : hexToRgb(light);
+    obj.applyState({
+      ...obj.captureState(),
+      px: rand(-0.8, 0.8) * i, py: rand(-0.4, 0.4),
+      sx: sc, sy: sc, sz: sc,
+      di: rand(0.1, 0.55), size: rand(0.9, 2.2),
+      cr: col.r, cg: col.g, cb: col.b, op: rand(0.75, 1),
+    });
+    cloudAnim(obj);
+  }
+
+  if (chance(0.55)) {
+    const obj = spawn(pick(['torusKnot', 'icosahedron', 'torus', 'box'] as const));
+    obj.setStaticMaterial({
+      wireframe: chance(0.5), metalness: rand(0.3, 1), roughness: rand(0.05, 0.6),
+    });
+    const sc = rand(0.3, 0.7);
+    const col = hexToRgb(chance(0.5) ? light : '#ffffff');
+    obj.applyState({
+      ...obj.captureState(),
+      sx: sc, sy: sc, sz: sc,
+      cr: col.r, cg: col.g, cb: col.b,
+      em: chance(0.6) ? rand(0.4, 2.2) : 0,
+    });
+    orbitAnim(obj, rand(1.6, 2.6), rand(-0.6, 1.2), pick([-1, 1]));
+  }
+
+  if (chance(0.85)) {
+    const p = spawn('particles');
+    p.applyState({ ...p.captureState(), op: rand(0.25, 0.6), size: rand(0.008, 0.03) });
+    kfAt(p, 0, { ry: 0 }, 'linear');
+    kfAt(p, dur, { ry: pick([-1, 1]) * Math.PI * rand(0.3, 0.8) }, 'linear');
+  }
+
+  const nLights = chance(0.7) ? 1 + (chance(0.4) ? 1 : 0) : 0;
+  for (let i = 0; i < nLights; i++) {
+    const l = spawn('pointLight');
+    const col = hexToRgb(chance(0.6) ? light : pick(PALETTES)[1]);
+    l.applyState({
+      ...l.captureState(),
+      cr: col.r, cg: col.g, cb: col.b, in: rand(4, 14),
+    });
+    orbitAnim(l, rand(1.8, 3.2), rand(0, 2), pick([-1, 1]));
+  }
+
+  if (chance(0.45)) {
+    const words = ['motion', 'pulse', 'flux', 'echo', 'void', 'drift', 'neon', 'fragment', 'signal', 'chaos'];
+    const cap = spawn('text', { text: pick(words) });
+    const sc = rand(0.3, 0.55);
+    cap.applyState({
+      ...cap.captureState(),
+      py: rand(-2.1, -1.6), sx: sc, sy: sc, sz: sc, op: rand(0.5, 0.9),
+    });
+  }
+
+  // langsame Kamerafahrt
+  const a0 = rand(0, Math.PI * 2);
+  const r0 = rand(4.6, 6.4);
+  const y0 = rand(0.3, 1.6);
+  const a1 = a0 + rand(-0.7, 0.7);
+  const r1 = r0 * rand(0.72, 0.94);
+  const y1 = y0 + rand(-0.4, 0.5);
+  cameraKeyframes = [];
+  upsertKeyframe(cameraKeyframes, 0, {
+    px: Math.cos(a0) * r0, py: y0, pz: Math.sin(a0) * r0, tx: 0, ty: 0, tz: 0,
+  }, 'easeInOut');
+  upsertKeyframe(cameraKeyframes, dur, {
+    px: Math.cos(a1) * r1, py: y1, pz: Math.sin(a1) * r1, tx: 0, ty: 0, tz: 0,
+  }, 'easeInOut');
+
+  refreshSceneList();
+  refreshTimeline();
+  renderProps();
+  setTime(0);
+  markDirty();
+  setPlaying(true);
+}
+
+$('btn-rnd-look').addEventListener('click', randomLook);
+$('btn-rnd-scene').addEventListener('click', randomScene);
 
 // ---------------------------------------------------------------- demo scene
 
