@@ -269,7 +269,7 @@ function refreshSceneList(): void {
     del.addEventListener('click', (e) => { e.stopPropagation(); removeObject(obj); });
 
     li.append(kind, nm, del);
-    li.addEventListener('click', () => select(obj));
+    li.addEventListener('click', () => { select(obj); closeDrawers(); });
     sceneListEl.appendChild(li);
   }
 }
@@ -604,6 +604,33 @@ canvas.addEventListener('pointerup', (e) => {
   select(null);
 });
 
+// gizmo mode buttons (mobile has no W/E/R keys)
+type GizmoMode = 'translate' | 'rotate' | 'scale';
+function setGizmoMode(mode: GizmoMode): void {
+  engine.gizmo.setMode(mode);
+  for (const m of ['translate', 'rotate', 'scale'] as const) {
+    $(`mode-${m}`).classList.toggle('on', m === mode);
+  }
+}
+(['translate', 'rotate', 'scale'] as const).forEach((m) => {
+  $(`mode-${m}`).addEventListener('click', () => setGizmoMode(m));
+});
+
+// drawers (mobile)
+function closeDrawers(): void {
+  document.body.classList.remove('left-open', 'right-open');
+}
+$('fab-left').addEventListener('click', () => {
+  document.body.classList.toggle('left-open');
+  document.body.classList.remove('right-open');
+});
+$('fab-right').addEventListener('click', () => {
+  document.body.classList.toggle('right-open');
+  document.body.classList.remove('left-open');
+});
+$('backdrop').addEventListener('click', closeDrawers);
+canvas.addEventListener('pointerdown', closeDrawers);
+
 // gizmo edits -> live prop refresh + auto-key on release
 engine.gizmo.addEventListener('objectChange', () => refreshPropValues());
 engine.gizmo.addEventListener('dragging-changed', (e) => {
@@ -614,7 +641,10 @@ engine.gizmo.addEventListener('dragging-changed', (e) => {
 // ---------------------------------------------------------------- toolbar / transport
 
 document.querySelectorAll<HTMLButtonElement>('[data-add]').forEach((btn) => {
-  btn.addEventListener('click', () => addObject(btn.dataset.add as ObjectKind));
+  btn.addEventListener('click', () => {
+    addObject(btn.dataset.add as ObjectKind);
+    closeDrawers();
+  });
 });
 
 playBtn.addEventListener('click', () => setPlaying(!playing));
@@ -649,11 +679,11 @@ window.addEventListener('keydown', (e) => {
     e.preventDefault();
     setPlaying(!playing);
   } else if (e.code === 'KeyW') {
-    engine.gizmo.setMode('translate');
+    setGizmoMode('translate');
   } else if (e.code === 'KeyE') {
-    engine.gizmo.setMode('rotate');
+    setGizmoMode('rotate');
   } else if (e.code === 'KeyR') {
-    engine.gizmo.setMode('scale');
+    setGizmoMode('scale');
   } else if (e.code === 'Delete' || e.code === 'Backspace') {
     if (timeline.deleteSelected()) return;
     if (selected) removeObject(selected);
@@ -803,7 +833,7 @@ $('btn-export').addEventListener('click', async () => {
         status.textContent = `${Math.round(f * 100)} %`;
       },
     });
-    downloadBlob(blob, 'motion-clip.webm');
+    downloadBlob(blob, blob.type.includes('mp4') ? 'motion-clip.mp4' : 'motion-clip.webm');
   } catch (err) {
     alert(err instanceof Error ? err.message : 'Export fehlgeschlagen.');
   } finally {

@@ -14,6 +14,9 @@ function pickMimeType(): string {
     'video/webm;codecs=vp9',
     'video/webm;codecs=vp8',
     'video/webm',
+    // iOS/Safari: MediaRecorder kann nur MP4/H.264
+    'video/mp4;codecs=avc1.42E01E',
+    'video/mp4',
   ];
   for (const c of candidates) {
     if (MediaRecorder.isTypeSupported(c)) return c;
@@ -25,7 +28,7 @@ export function exportWebM(opts: ExportOptions): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const mimeType = pickMimeType();
     if (!mimeType) {
-      reject(new Error('WebM-Aufnahme wird von diesem Browser nicht unterstützt.'));
+      reject(new Error('Video-Aufnahme wird von diesem Browser nicht unterstützt.'));
       return;
     }
     const stream = opts.canvas.captureStream(opts.fps);

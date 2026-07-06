@@ -14,6 +14,7 @@
 
 html, body {
   height: 100%;
+  height: 100dvh;
   background: var(--bg);
   color: var(--text);
   font-family: 'Space Grotesk', system-ui, sans-serif;
@@ -116,7 +117,48 @@ body {
 
 /* ---------- Viewport ---------- */
 #viewport { flex: 1; position: relative; min-width: 0; background: #000; }
-#stage { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+#stage { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+
+#vp-tools {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 4px;
+  z-index: 5;
+}
+#vp-tools button {
+  width: 38px;
+  height: 32px;
+  padding: 0;
+  background: rgba(19, 21, 28, 0.85);
+  font-size: 15px;
+}
+#vp-tools button.on { color: var(--accent-2); border-color: var(--accent-2); }
+
+.fab {
+  position: absolute;
+  top: 10px;
+  z-index: 5;
+  display: none;
+  width: 42px;
+  height: 36px;
+  padding: 0;
+  font-size: 16px;
+  background: rgba(19, 21, 28, 0.85);
+}
+#fab-left { left: 10px; }
+#fab-right { right: 10px; }
+
+#backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 6, 10, 0.55);
+  z-index: 39;
+  display: none;
+}
+body.left-open #backdrop, body.right-open #backdrop { display: block; }
 #hints {
   position: absolute;
   bottom: 10px;
@@ -179,7 +221,7 @@ body {
 #tracks { flex: 1; overflow-y: auto; position: relative; }
 .tl-grid { display: flex; min-height: 100%; }
 .tl-names { flex: 0 0 150px; border-right: 1px solid var(--border); }
-.tl-area { flex: 1; position: relative; cursor: crosshair; min-width: 0; }
+.tl-area { flex: 1; position: relative; cursor: crosshair; min-width: 0; touch-action: none; }
 
 .tl-ruler { height: 22px; position: relative; border-bottom: 1px solid var(--border); }
 .tl-ruler .tick {
@@ -212,6 +254,7 @@ body {
 .tl-names .tl-row.selected { color: var(--text); box-shadow: inset 2px 0 0 var(--accent); background: var(--panel-2); }
 
 .tl-key {
+  touch-action: none;
   position: absolute;
   top: 50%;
   width: 10px;
@@ -279,3 +322,37 @@ body {
   transition: width 0.15s linear;
 }
 #export-status { color: var(--muted); font-size: 12px; }
+
+/* ---------- Mobile ---------- */
+@media (pointer: coarse) {
+  #hints { display: none; }
+}
+
+@media (max-width: 900px) {
+  .fab { display: block; }
+
+  #topbar { flex-wrap: wrap; row-gap: 6px; padding: 6px 10px; }
+  #topbar button, #topbar select { padding: 7px 10px; }
+
+  #left, #right {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    z-index: 40;
+    width: min(80vw, 300px);
+    transition: transform 0.25s ease;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.6);
+  }
+  #left { left: 0; transform: translateX(-100%); }
+  #right { right: 0; transform: translateX(100%); }
+  body.left-open #left { transform: none; }
+  body.right-open #right { transform: none; }
+
+  .obj-grid button, #scene-list li { padding: 9px 10px; }
+
+  #timeline { height: 150px; }
+  #transport { overflow-x: auto; padding: 6px 8px; gap: 6px; }
+  #transport button { flex: 0 0 auto; padding: 7px 10px; }
+  #time-display { min-width: 96px; flex: 0 0 auto; }
+  .tl-names { flex-basis: 90px; }
+}

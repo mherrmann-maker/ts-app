@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>VK MOTION STUDIO</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -27,7 +27,7 @@
         <option value="vertical">Hochkant · 1080×1920</option>
       </select>
       <button id="btn-png" title="Aktuellen Frame als PNG exportieren">PNG</button>
-      <button id="btn-export" class="accent" title="Clip als WebM-Video exportieren">⬇ Export WebM</button>
+      <button id="btn-export" class="accent" title="Clip als Video exportieren">⬇ Export Video</button>
     </div>
   </header>
 
@@ -74,6 +74,13 @@
 
     <div id="viewport">
       <canvas id="stage"></canvas>
+      <div id="vp-tools">
+        <button id="mode-translate" class="on" title="Verschieben (W)">✥</button>
+        <button id="mode-rotate" title="Drehen (E)">⟳</button>
+        <button id="mode-scale" title="Skalieren (R)">⤢</button>
+      </div>
+      <button id="fab-left" class="fab" title="Objekte">☰</button>
+      <button id="fab-right" class="fab" title="Eigenschaften">⚙</button>
       <div id="hints">Linksklick: auswählen · W/E/R: Verschieben/Drehen/Skalieren · Leertaste: Play · Entf: löschen</div>
     </div>
 
@@ -105,6 +112,8 @@
     </div>
     <div id="tracks"></div>
   </footer>
+
+  <div id="backdrop"></div>
 
   <div id="export-overlay" hidden>
     <div class="export-box">
