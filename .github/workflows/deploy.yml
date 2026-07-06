@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - claude/install-github-app-W4Nga
+  workflow_dispatch:
 
 permissions:
   contents: write
